@@ -19,14 +19,13 @@ export function HomeHeader({
   return (
     <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-xl">
       <div className="px-5 pb-3 pt-4">
-        {/* location row */}
         <div className="mb-3 flex items-center justify-between">
           <button
             type="button"
             className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-foreground transition-colors active:bg-accent"
           >
             <MapPin className="size-4 text-primary" />
-            中原大學附近
+            台北市信義區
             <ChevronDown className="size-4 text-muted-foreground" />
           </button>
 
@@ -39,11 +38,10 @@ export function HomeHeader({
               取消
             </button>
           ) : (
-            <span className="text-xs text-muted-foreground">即時人流查詢</span>
+            <span className="text-xs text-muted-foreground">即時人流整合</span>
           )}
         </div>
 
-        {/* search row */}
         <div className="flex items-center gap-2.5">
           <div
             className={cn(
@@ -58,7 +56,7 @@ export function HomeHeader({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={onFocus}
-              placeholder="搜尋店家、地區、學校周邊美食"
+              placeholder="搜尋店家、餐點或分類"
               className="h-full w-full bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
             />
             {query && (

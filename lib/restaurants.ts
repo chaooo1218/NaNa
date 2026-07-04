@@ -1,4 +1,5 @@
 export type CrowdLevel = "low" | "normal" | "high" | "packed"
+export type StoreStatus = CrowdLevel | "closed"
 
 export type Restaurant = {
   id: string
@@ -8,121 +9,171 @@ export type Restaurant = {
   distanceM: number
   walkMin: number
   crowd: CrowdLevel
+  currentPeople: number
+  capacity: number
   waitLabel: string
   open: boolean
   updatedLabel: string
+  logoText: string
   featured?: boolean
+  advertised?: boolean
   tags: string[]
   // normalized map position in percentages (for the demo map)
   map: { x: number; y: number }
 }
 
 export const CROWD_META: Record<
-  CrowdLevel,
-  { label: string; token: string; dot: string }
+  StoreStatus,
+  { label: string; token: string; dot: string; statusClass: string }
 > = {
-  low: { label: "人少", token: "text-crowd-low", dot: "bg-crowd-low" },
-  normal: { label: "普通", token: "text-crowd-normal", dot: "bg-crowd-normal" },
-  high: { label: "偏多", token: "text-crowd-high", dot: "bg-crowd-high" },
-  packed: { label: "擁擠", token: "text-crowd-packed", dot: "bg-crowd-packed" },
+  low: {
+    label: "空閒",
+    token: "text-crowd-low",
+    dot: "bg-crowd-low",
+    statusClass: "status-low",
+  },
+  normal: {
+    label: "普通",
+    token: "text-crowd-normal",
+    dot: "bg-crowd-normal",
+    statusClass: "status-normal",
+  },
+  high: {
+    label: "忙碌",
+    token: "text-crowd-high",
+    dot: "bg-crowd-high",
+    statusClass: "status-high",
+  },
+  packed: {
+    label: "尖峰",
+    token: "text-crowd-packed",
+    dot: "bg-crowd-packed",
+    statusClass: "status-packed",
+  },
+  closed: {
+    label: "休息中",
+    token: "text-muted-foreground",
+    dot: "bg-muted-foreground",
+    statusClass: "status-closed",
+  },
 }
 
 export const restaurants: Restaurant[] = [
   {
     id: "ramen-ichi",
-    name: "一風堂拉麵 中原店",
-    category: "拉麵",
+    name: "一番拉麵",
+    category: "日式拉麵",
     image: "/restaurants/ramen.png",
     distanceM: 180,
     walkMin: 3,
     crowd: "low",
-    waitLabel: "免排隊",
+    currentPeople: 20,
+    capacity: 35,
+    waitLabel: "0 分鐘",
     open: true,
-    updatedLabel: "5 秒前更新",
+    updatedLabel: "5 分鐘前更新",
+    logoText: "一番",
     featured: true,
-    tags: ["晚餐", "宵夜", "現在人少", "推薦店家"],
+    advertised: true,
+    tags: ["日式", "晚餐", "空閒", "本日推薦"],
     map: { x: 32, y: 38 },
   },
   {
     id: "morning-light",
-    name: "晨光晨間廚房",
-    category: "早餐",
+    name: "晨光早午餐",
+    category: "早午餐",
     image: "/restaurants/breakfast.png",
     distanceM: 240,
     walkMin: 4,
     crowd: "normal",
-    waitLabel: "約 5–10 分鐘",
+    currentPeople: 24,
+    capacity: 38,
+    waitLabel: "5 分鐘",
     open: true,
-    updatedLabel: "12 秒前更新",
-    tags: ["早餐", "營業中"],
+    updatedLabel: "12 分鐘前更新",
+    logoText: "晨光",
+    tags: ["早午餐", "營業中", "普通"],
     map: { x: 58, y: 26 },
   },
   {
     id: "bento-house",
-    name: "老地方招牌便當",
+    name: "巷口便當",
     category: "便當",
     image: "/restaurants/bento.png",
     distanceM: 320,
     walkMin: 5,
     crowd: "high",
-    waitLabel: "約 10–15 分鐘",
+    currentPeople: 31,
+    capacity: 40,
+    waitLabel: "15 分鐘",
     open: true,
-    updatedLabel: "8 秒前更新",
-    tags: ["便當", "晚餐", "營業中"],
+    updatedLabel: "8 分鐘前更新",
+    logoText: "巷口",
+    tags: ["便當", "日式", "營業中", "忙碌"],
     map: { x: 46, y: 58 },
   },
   {
     id: "green-tea",
-    name: "綠意手搖飲",
+    name: "青茶研究所",
     category: "飲料",
     image: "/restaurants/drinks.png",
     distanceM: 90,
     walkMin: 2,
     crowd: "low",
-    waitLabel: "約 3 分鐘",
+    currentPeople: 8,
+    capacity: 25,
+    waitLabel: "3 分鐘",
     open: true,
-    updatedLabel: "3 秒前更新",
-    tags: ["飲料", "現在人少", "10 分鐘內", "營業中"],
+    updatedLabel: "3 分鐘前更新",
+    logoText: "青茶",
+    advertised: true,
+    tags: ["飲料", "空閒", "10 分鐘內", "營業中"],
     map: { x: 24, y: 64 },
   },
   {
     id: "midnight-izakaya",
-    name: "深夜食堂 居酒屋",
+    name: "深夜食堂",
     category: "居酒屋",
     image: "/restaurants/izakaya.png",
     distanceM: 540,
     walkMin: 8,
     crowd: "packed",
-    waitLabel: "約 25 分鐘",
+    currentPeople: 46,
+    capacity: 48,
+    waitLabel: "25 分鐘",
     open: true,
-    updatedLabel: "20 秒前更新",
-    tags: ["宵夜", "晚餐"],
+    updatedLabel: "20 分鐘前更新",
+    logoText: "深夜",
+    tags: ["晚餐", "日式", "尖峰"],
     map: { x: 70, y: 52 },
   },
   {
     id: "wood-pizza",
-    name: "窯烤手作披薩",
+    name: "木窯披薩",
     category: "披薩",
     image: "/restaurants/pizza.png",
     distanceM: 410,
     walkMin: 6,
     crowd: "normal",
-    waitLabel: "約 8 分鐘",
+    currentPeople: 0,
+    capacity: 32,
+    waitLabel: "未營業",
     open: false,
-    updatedLabel: "1 分鐘前更新",
-    tags: ["晚餐", "推薦店家"],
+    updatedLabel: "1 小時前更新",
+    logoText: "木窯",
+    tags: ["晚餐", "本日推薦", "休息中"],
     map: { x: 60, y: 74 },
   },
 ]
 
 export const filterChips = [
-  "現在人少",
+  "空閒",
   "10 分鐘內",
   "營業中",
-  "早餐",
+  "早午餐",
   "飲料",
   "便當",
+  "日式",
   "晚餐",
-  "宵夜",
-  "推薦店家",
+  "本日推薦",
 ] as const

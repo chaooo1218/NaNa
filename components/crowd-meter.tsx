@@ -19,8 +19,7 @@ export function CrowdBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
-        "bg-secondary",
+        "inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium",
         meta.token,
         className,
       )}
@@ -35,7 +34,7 @@ export function CrowdMeter({ level }: { level: CrowdLevel }) {
   const active = LEVEL_INDEX[level]
   const meta = CROWD_META[level]
   return (
-    <div className="flex items-center gap-1" aria-label={`目前人潮：${meta.label}`}>
+    <div className="flex items-center gap-1" aria-label={`目前人流：${meta.label}`}>
       {[1, 2, 3, 4].map((i) => (
         <span
           key={i}
