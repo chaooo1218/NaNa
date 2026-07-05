@@ -2,22 +2,35 @@
 
 import Image from "next/image"
 import { useMemo, useState } from "react"
-import { MapPin } from "lucide-react"
+import { ArrowDownUp, MapPin, UsersRound } from "lucide-react"
 import { HomeHeader } from "@/components/home-header"
 import { FilterChips } from "@/components/filter-chips"
 import { RestaurantCard } from "@/components/restaurant-card"
 import { StoreMap } from "@/components/store-map"
-import { restaurants } from "@/lib/restaurants"
+import { CROWD_META, restaurants } from "@/lib/restaurants"
+import { cn } from "@/lib/utils"
 
 type LocationState = {
   status: "idle" | "prompt" | "locating" | "allowed" | "denied" | "unavailable"
   label: string
 }
 
+type SortMode = "crowd" | "distance"
+
+const sortOptions: Array<{
+  value: SortMode
+  label: string
+  icon: typeof UsersRound
+}> = [
+  { value: "crowd", label: "依人潮排序", icon: UsersRound },
+  { value: "distance", label: "距離最近", icon: MapPin },
+]
+
 export default function HomePage() {
   const [query, setQuery] = useState("")
   const [focused, setFocused] = useState(false)
   const [activeChips, setActiveChips] = useState<string[]>([])
+  const [sortMode, setSortMode] = useState<SortMode>("crowd")
   const [location, setLocation] = useState<LocationState>({
     status: "idle",
     label: "尚未確認位置",
@@ -29,7 +42,7 @@ export default function HomePage() {
     )
 
   const filtered = useMemo(() => {
-    return restaurants.filter((r) => {
+    const result = restaurants.filter((r) => {
       const q = query.trim()
       const matchQuery =
         !q || r.name.includes(q) || r.category.includes(q) || r.tags.some((t) => t.includes(q))
@@ -37,7 +50,17 @@ export default function HomePage() {
         activeChips.length === 0 || activeChips.every((c) => r.tags.includes(c))
       return matchQuery && matchChips
     })
-  }, [query, activeChips])
+
+    return [...result].sort((a, b) => {
+      if (sortMode === "distance") {
+        return a.distanceM - b.distanceM
+      }
+
+      const aStatus = a.open ? a.crowd : "closed"
+      const bStatus = b.open ? b.crowd : "closed"
+      return CROWD_META[aStatus].score - CROWD_META[bStatus].score || a.distanceM - b.distanceM
+    })
+  }, [query, activeChips, sortMode])
 
   const openSearch = () => {
     setFocused(true)
@@ -136,6 +159,34 @@ export default function HomePage() {
 
         <section className="sticky top-[132px] z-20 -mx-5 bg-background/85 px-5 py-3 backdrop-blur-xl">
           <FilterChips active={activeChips} onToggle={toggleChip} />
+        </section>
+
+        <section className="mb-4 flex items-center gap-2" aria-label="店家排序">
+          <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-primary">
+            <ArrowDownUp className="size-4" />
+          </span>
+          <div className="grid flex-1 grid-cols-2 gap-2 rounded-2xl bg-secondary p-1">
+            {sortOptions.map(({ value, label, icon: Icon }) => {
+              const active = sortMode === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSortMode(value)}
+                  aria-pressed={active}
+                  className={cn(
+                    "inline-flex h-9 items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.98]",
+                    active
+                      ? "bg-card text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="size-3.5" />
+                  {label}
+                </button>
+              )
+            })}
+          </div>
         </section>
 
         <section aria-label="店家清單" className="flex flex-col gap-4">
