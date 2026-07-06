@@ -1,27 +1,28 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Local environment configuration
+.env
+.env.*
+!.env.example
+!.env.template
+.envrc
+.dev.vars
 
-# dependencies
-/node_modules
+# Local-only secret folders
+secrets/
+local-secrets/
 
-# next.js
-/.next/
-/out/
+# Private keys and certificates
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
 
-# production
-/build
+# Local infrastructure state
+.aws/
+*.tfstate
+*.tfstate.*
+*.tfvars
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
