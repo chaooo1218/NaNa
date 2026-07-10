@@ -1,0 +1,18 @@
+---
+import BrandBanner from "@/components/layout/BrandBanner.astro"
+import Footer from "@/components/layout/Footer.astro"
+import HeaderShell from "@/components/layout/HeaderShell.astro"
+import { RestaurantExplorerIsland } from "@/islands/RestaurantExplorerIsland"
+import PublicLayout from "@/layouts/PublicLayout.astro"
+---
+
+<PublicLayout>
+  <div class="mx-auto min-h-dvh w-full max-w-md bg-background sm:max-w-5xl">
+    <BrandBanner />
+    <HeaderShell />
+    <main class="mx-auto max-w-md sm:max-w-xl">
+      <RestaurantExplorerIsland client:load />
+    </main>
+    <Footer />
+  </div>
+</PublicLayout>

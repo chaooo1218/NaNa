@@ -1,0 +1,16 @@
+---
+interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = "找不到符合條件的店家",
+  description = "請調整搜尋關鍵字或篩選條件。",
+} = Astro.props
+---
+
+<div class="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-border py-14 text-center">
+  <p class="text-sm font-medium text-foreground">{title}</p>
+  <p class="text-xs text-muted-foreground">{description}</p>
+</div>

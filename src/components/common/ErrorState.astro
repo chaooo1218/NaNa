@@ -1,0 +1,16 @@
+---
+interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = "資料暫時無法載入",
+  description = "請稍後再試，或確認網路連線狀態。",
+} = Astro.props
+---
+
+<div class="rounded-3xl border border-border bg-card p-5 text-center">
+  <p class="text-sm font-semibold text-foreground">{title}</p>
+  <p class="mt-1 text-xs text-muted-foreground">{description}</p>
+</div>
