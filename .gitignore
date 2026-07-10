@@ -26,3 +26,19 @@ local-secrets/
 # Editor and operating-system files
 .DS_Store
 Thumbs.db
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+.astro/
+.next/
+out/
+build/
+
+# Logs and local cache
+*.log
+*.tsbuildinfo
+next-env.d.ts
