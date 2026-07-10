@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package nana.device.v1;
+
+import "google/protobuf/timestamp.proto";
+import "contracts/proto/v1/device_common.proto";
+
+enum RadarStatus {
+  RADAR_STATUS_UNSPECIFIED = 0;
+  RADAR_STATUS_READY = 1;
+  RADAR_STATUS_DEGRADED = 2;
+  RADAR_STATUS_UNAVAILABLE = 3;
+}
+
+message RadarHealth {
+  RadarStatus status = 1;
+  optional google.protobuf.Timestamp last_valid_frame_at = 2;
+  uint64 valid_frame_count = 3;
+  uint64 dropped_frame_count = 4;
+  repeated SafeDiagnostic diagnostics = 5;
+}
+
+message NetworkHealth {
+  bool connected = 1;
+  sint32 wifi_rssi = 2;
+  optional google.protobuf.Timestamp last_successful_upload_at = 3;
+  uint32 consecutive_upload_failures = 4;
+  repeated SafeDiagnostic diagnostics = 5;
+}
+
+message DeviceHealth {
+  uint64 free_heap_bytes = 1;
+  uint64 minimum_free_heap_bytes = 2;
+  RadarHealth radar = 3;
+  NetworkHealth network = 4;
+  repeated SafeDiagnostic diagnostics = 5;
+}
+
+message CountWindowTelemetry {
+  MessageEnvelope envelope = 1;
+  string restaurant_assignment_version = 2;
+  string door_public_reference = 3;
+  string calibration_version = 4;
+  optional google.protobuf.Timestamp window_start = 5;
+  optional google.protobuf.Timestamp window_end = 6;
+  uint32 window_duration_ms = 7;
+  uint32 entry_delta = 8;
+  uint32 exit_delta = 9;
+  optional sint32 local_occupancy_candidate = 10;
+  optional uint32 waiting_count_candidate = 11;
+  uint32 target_count_peak = 12;
+  bool capacity_saturated = 13;
+  uint32 saturation_duration_ms = 14;
+  uint32 radar_frame_count = 15;
+  uint32 dropped_frame_count = 16;
+  repeated QualityFlag quality_flags = 17;
+  string algorithm_version = 18;
+  string config_checksum = 19;
+}
+
+message DeviceHeartbeat {
+  MessageEnvelope envelope = 1;
+  string current_firmware_version = 2;
+  uint32 security_version = 3;
+  string active_partition = 4;
+  uint64 uptime_seconds = 5;
+  uint32 reboot_count = 6;
+  string last_reset_reason = 7;
+  uint64 free_heap_bytes = 8;
+  uint64 minimum_free_heap_bytes = 9;
+  sint32 wifi_rssi = 10;
+  bool network_connected = 11;
+  TimeStatus time_status = 12;
+  RadarStatus radar_status = 13;
+  optional google.protobuf.Timestamp last_valid_radar_frame_at = 14;
+  optional google.protobuf.Timestamp last_successful_upload_at = 15;
+  uint32 offline_buffer_count = 16;
+  string current_calibration_version = 17;
+  string current_configuration_version = 18;
+  optional string pending_ota_deployment_id = 19;
+  DeviceHealth health = 20;
+}
+
+message UploadBatch {
+  string batch_id = 1;
+  uint64 first_sequence_number = 2;
+  uint64 last_sequence_number = 3;
+  repeated CountWindowTelemetry count_windows = 4;
+  optional DeviceHeartbeat heartbeat = 5;
+  optional google.protobuf.Timestamp batch_created_at = 6;
+  bool offline_buffered = 7;
+  optional google.protobuf.Timestamp oldest_buffered_at = 8;
+}
+
+message RejectedItem {
+  string message_id = 1;
+  uint64 sequence_number = 2;
+  string safe_error_code = 3;
+  bool retryable = 4;
+  string safe_message = 5;
+}
+
+message TelemetryAck {
+  string request_id = 1;
+  string batch_id = 2;
+  repeated string accepted_message_ids = 3;
+  repeated string duplicate_message_ids = 4;
+  repeated RejectedItem rejected_items = 5;
+  optional uint64 highest_contiguous_sequence = 6;
+  google.protobuf.Timestamp server_received_at = 7;
+  optional uint32 recommended_retry_after_ms = 8;
+  bool configuration_update_available = 9;
+  bool ota_update_available = 10;
+  repeated string accepted_out_of_order_message_ids = 11;
+}

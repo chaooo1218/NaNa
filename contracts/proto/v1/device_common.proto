@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package nana.device.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Draft contract only. It is not evidence of a deployed transport.
+enum TimeSyncState {
+  TIME_SYNC_STATE_UNSPECIFIED = 0;
+  TIME_SYNC_STATE_SYNCED = 1;
+  TIME_SYNC_STATE_ESTIMATED = 2;
+  TIME_SYNC_STATE_UNSYNCED = 3;
+  TIME_SYNC_STATE_INVALID = 4;
+}
+
+enum QualityFlag {
+  QUALITY_FLAG_UNSPECIFIED = 0;
+  QUALITY_FLAG_TARGET_CAPACITY_SATURATED = 1;
+  QUALITY_FLAG_COUNT_MAY_BE_UNDERESTIMATED = 2;
+  QUALITY_FLAG_RADAR_FRAME_LOSS = 3;
+  QUALITY_FLAG_TRACK_ASSOCIATION_UNCERTAIN = 4;
+  QUALITY_FLAG_CALIBRATION_INVALID = 5;
+  QUALITY_FLAG_CLOCK_UNSYNCED = 6;
+  QUALITY_FLAG_OFFLINE_GAP = 7;
+  QUALITY_FLAG_COUNT_UNDERFLOW = 8;
+  QUALITY_FLAG_MULTI_SENSOR_OVERLAP_UNCERTAIN = 9;
+  QUALITY_FLAG_CONFIG_VERSION_MISMATCH = 10;
+  QUALITY_FLAG_SENSOR_UNAVAILABLE = 11;
+  QUALITY_FLAG_NETWORK_UPLOAD_DELAYED = 12;
+  QUALITY_FLAG_LOCAL_BUFFER_NEAR_CAPACITY = 13;
+  QUALITY_FLAG_DEVICE_REBOOT_DURING_WINDOW = 14;
+}
+
+message DeviceIdentity {
+  // Device API identifier only. Never expose through Public API.
+  string device_public_uid = 1;
+}
+
+message FirmwareIdentity {
+  string semantic_version = 1;
+  uint32 security_version = 2;
+  string algorithm_version = 3;
+  string build_reference = 4;
+}
+
+message HardwareIdentity {
+  string model = 1;
+  string revision = 2;
+  string board_variant = 3;
+}
+
+message TimeStatus {
+  TimeSyncState state = 1;
+  optional google.protobuf.Timestamp last_synced_at = 2;
+  optional uint64 estimated_error_ms = 3;
+}
+
+message SafeDiagnostic {
+  string code = 1;
+  string summary = 2;
+  // Server-enforced allowlist. Never include secrets, credentials, URLs, or dumps.
+  map<string, string> safe_metadata = 3;
+}
+
+message DoorReference {
+  // Opaque assignment-scoped reference supplied by backend configuration.
+  string door_public_reference = 1;
+  string assignment_version = 2;
+}
+
+message CalibrationReference {
+  string calibration_version = 1;
+  string config_checksum = 2;
+}
+
+message MessageEnvelope {
+  string schema_version = 1;
+  string message_id = 2;
+  string device_public_uid = 3;
+  string boot_id = 4;
+  uint64 sequence_number = 5;
+  optional google.protobuf.Timestamp sent_at = 6;
+  uint64 monotonic_uptime_ms = 7;
+  FirmwareIdentity firmware_identity = 8;
+  HardwareIdentity hardware_identity = 9;
+  TimeStatus time_status = 10;
+}

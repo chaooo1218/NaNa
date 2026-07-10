@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package nana.device.v1;
+
+import "google/protobuf/timestamp.proto";
+import "contracts/proto/v1/device_common.proto";
+
+enum OtaState {
+  OTA_STATE_UNSPECIFIED = 0;
+  OTA_STATE_OFFERED = 1;
+  OTA_STATE_ACCEPTED = 2;
+  OTA_STATE_DOWNLOADING = 3;
+  OTA_STATE_VERIFYING_HASH = 4;
+  OTA_STATE_VERIFYING_SIGNATURE = 5;
+  OTA_STATE_CHECKING_COMPATIBILITY = 6;
+  OTA_STATE_WRITING_INACTIVE_PARTITION = 7;
+  OTA_STATE_PENDING_REBOOT = 8;
+  OTA_STATE_BOOTING_CANDIDATE = 9;
+  OTA_STATE_HEALTH_CHECK = 10;
+  OTA_STATE_CONFIRMED = 11;
+  OTA_STATE_ROLLBACK_STARTED = 12;
+  OTA_STATE_ROLLED_BACK = 13;
+  OTA_STATE_FAILED = 14;
+  OTA_STATE_PAUSED = 15;
+  OTA_STATE_WITHDRAWN = 16;
+  OTA_STATE_REJECTED_SECURITY_VERSION = 17;
+}
+
+enum OtaErrorCode {
+  OTA_ERROR_CODE_UNSPECIFIED = 0;
+  OTA_ERROR_CODE_NETWORK = 1;
+  OTA_ERROR_CODE_TIMEOUT = 2;
+  OTA_ERROR_CODE_HASH_MISMATCH = 3;
+  OTA_ERROR_CODE_SIGNATURE_INVALID = 4;
+  OTA_ERROR_CODE_HARDWARE_INCOMPATIBLE = 5;
+  OTA_ERROR_CODE_BOOTLOADER_INCOMPATIBLE = 6;
+  OTA_ERROR_CODE_VERSION_INCOMPATIBLE = 7;
+  OTA_ERROR_CODE_SECURITY_VERSION_REJECTED = 8;
+  OTA_ERROR_CODE_STORAGE = 9;
+  OTA_ERROR_CODE_WRITE_FAILED = 10;
+  OTA_ERROR_CODE_HEALTH_CHECK_FAILED = 11;
+  OTA_ERROR_CODE_CAMPAIGN_PAUSED = 12;
+  OTA_ERROR_CODE_DEPLOYMENT_WITHDRAWN = 13;
+  OTA_ERROR_CODE_UNKNOWN = 14;
+}
+
+message FirmwareArtifact {
+  string artifact_url = 1;
+  uint64 artifact_size_bytes = 2;
+  string sha256 = 3;
+  map<string, string> signature_metadata = 4;
+}
+
+message FirmwareManifest {
+  string deployment_id = 1;
+  string release_id = 2;
+  string semantic_version = 3;
+  uint32 security_version = 4;
+  repeated string hardware_compatibility = 5;
+  string minimum_bootloader_version = 6;
+  optional string minimum_current_version = 7;
+  optional string maximum_current_version = 8;
+  FirmwareArtifact artifact = 9;
+  string release_channel = 10;
+  optional google.protobuf.Timestamp rollout_deadline = 11;
+  bool mandatory = 12;
+  optional string recovery_release_reference = 13;
+  string manifest_version = 14;
+  string manifest_integrity = 15;
+}
+
+message OtaDeploymentCommand {
+  string command_id = 1;
+  FirmwareManifest manifest = 2;
+  optional google.protobuf.Timestamp not_before = 3;
+  optional google.protobuf.Timestamp expires_at = 4;
+}
+
+message OtaProgress {
+  MessageEnvelope envelope = 1;
+  string deployment_id = 2;
+  OtaState state = 3;
+  uint32 progress_percent = 4;
+  uint64 bytes_downloaded = 5;
+  string current_version = 6;
+  string target_version = 7;
+  uint32 current_security_version = 8;
+  uint32 target_security_version = 9;
+  optional OtaErrorCode error_code = 10;
+  optional string safe_error_detail = 11;
+  google.protobuf.Timestamp reported_at = 12;
+}
+
+message BootHealthReport {
+  MessageEnvelope envelope = 1;
+  string deployment_id = 2;
+  string booted_version = 3;
+  uint32 booted_security_version = 4;
+  string active_partition = 5;
+  bool nvs_readable = 6;
+  bool core_tasks_started = 7;
+  bool watchdog_healthy = 8;
+  bool radar_uart_started = 9;
+  bool configuration_valid = 10;
+  bool crash_loop_detected = 11;
+  string network_status = 12;
+  bool local_health_passed = 13;
+  google.protobuf.Timestamp report_time = 14;
+  repeated SafeDiagnostic diagnostics = 15;
+}

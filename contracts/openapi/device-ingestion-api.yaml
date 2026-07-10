@@ -1,0 +1,632 @@
+openapi: 3.1.0
+info:
+  title: NaNa Device Ingestion API
+  version: 0.1.0-draft
+  description: >-
+    Transport contract draft only. No endpoint, credential, certificate authority,
+    database connection, or production service is created by this document.
+security:
+  - DeviceHmac: []
+  - DeviceMtls: []
+paths:
+  /device/v1/telemetry/batch:
+    post:
+      operationId: ingestTelemetryBatch
+      summary: 接收 Count Window 批次並逐項確認
+      parameters: &deviceHeaders
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/MessageId'
+        - $ref: '#/components/parameters/DevicePublicUid'
+        - $ref: '#/components/parameters/RequestTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UploadBatch' }
+      responses:
+        '200':
+          description: 批次結果；重複或單項失敗不使整批失敗
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TelemetryAck' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '409': { $ref: '#/components/responses/ReplayConflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /device/v1/heartbeat:
+    post:
+      operationId: recordDeviceHeartbeat
+      summary: 接收裝置 Heartbeat 與安全 Health 摘要
+      parameters: *deviceHeaders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeviceHeartbeat' }
+      responses:
+        '200':
+          description: Heartbeat ACK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BasicAck' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /device/v1/config:
+    get:
+      operationId: getDeviceConfiguration
+      summary: 取得完整且版本化的原子設定
+      parameters: *deviceHeaders
+      responses:
+        '200':
+          description: 完整設定 bundle
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeviceConfiguration' }
+        '304': { description: 設定未變更 }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /device/v1/config/ack:
+    post:
+      operationId: acknowledgeDeviceConfiguration
+      summary: 回報設定驗證與原子切換結果
+      parameters: *deviceHeaders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfigurationAck' }
+      responses:
+        '200':
+          description: ACK 已接收
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BasicAck' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /device/v1/commands:
+    get:
+      operationId: listPendingDeviceCommands
+      summary: 輪詢待執行命令
+      parameters: *deviceHeaders
+      responses:
+        '200':
+          description: 有界命令集合
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [requestId, commands, serverReceivedAt]
+                properties:
+                  requestId: { type: string }
+                  commands:
+                    type: array
+                    maxItems: 20
+                    items: { $ref: '#/components/schemas/DeviceCommand' }
+                  serverReceivedAt: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /device/v1/commands/{commandId}/ack:
+    post:
+      operationId: acknowledgeDeviceCommand
+      summary: 回報命令結果
+      parameters:
+        - $ref: '#/components/parameters/CommandId'
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/MessageId'
+        - $ref: '#/components/parameters/DevicePublicUid'
+        - $ref: '#/components/parameters/RequestTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommandAck' }
+      responses:
+        '200':
+          description: ACK 已接收
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BasicAck' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /device/v1/ota/manifest:
+    get:
+      operationId: getOtaManifest
+      summary: 取得已授權部署的 OTA manifest
+      parameters: *deviceHeaders
+      responses:
+        '200':
+          description: 受控 manifest；artifact URL 不得記錄於 log
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FirmwareManifest' }
+        '204': { description: 無可用部署 }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /device/v1/ota/progress:
+    post:
+      operationId: recordOtaProgress
+      summary: 回報 OTA 狀態與進度
+      parameters: *deviceHeaders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OtaProgress' }
+      responses:
+        '200':
+          description: Progress ACK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BasicAck' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '409': { $ref: '#/components/responses/ReplayConflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /device/v1/boot-health:
+    post:
+      operationId: recordBootHealth
+      summary: 回報候選韌體本機健康檢查
+      parameters: *deviceHeaders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BootHealthReport' }
+      responses:
+        '200':
+          description: Health report ACK；不代表自動確認版本
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BasicAck' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '409': { $ref: '#/components/responses/ReplayConflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/ServerError' }
+components:
+  securitySchemes:
+    DeviceHmac:
+      type: apiKey
+      in: header
+      name: X-Device-Signature
+      description: Per-device HMAC signature; never a fleet-wide key.
+    DeviceMtls:
+      type: mutualTLS
+      description: Per-device client certificate for enterprise production.
+  parameters:
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 100 }
+    MessageId:
+      name: X-Message-Id
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+    DevicePublicUid:
+      name: X-Device-Public-Uid
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 160 }
+    RequestTimestamp:
+      name: X-Device-Timestamp
+      in: header
+      required: true
+      schema: { type: string }
+      description: RFC 3339 when synced; otherwise signed explicit unsynced marker policy.
+    CommandId:
+      name: commandId
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 120 }
+  responses:
+    ValidationError:
+      description: Safe validation failure; do not retry unchanged payload indefinitely.
+      content: { application/json: { schema: { $ref: '#/components/schemas/DeviceApiError' } } }
+    AuthenticationError:
+      description: Authentication failed closed.
+      content: { application/json: { schema: { $ref: '#/components/schemas/DeviceApiError' } } }
+    ReplayConflict:
+      description: Message or sequence conflicts with previously accepted identity.
+      content: { application/json: { schema: { $ref: '#/components/schemas/DeviceApiError' } } }
+    PayloadTooLarge:
+      description: Batch exceeds configured window or byte limit.
+      content: { application/json: { schema: { $ref: '#/components/schemas/DeviceApiError' } } }
+    RateLimited:
+      description: Device rate limit exceeded.
+      headers:
+        Retry-After: { schema: { type: integer, minimum: 1 } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/DeviceApiError' } } }
+    NotFound:
+      description: Device-scoped resource unavailable.
+      content: { application/json: { schema: { $ref: '#/components/schemas/DeviceApiError' } } }
+    ServerError:
+      description: Safe server error without stack, provider, database, or secret details.
+      content: { application/json: { schema: { $ref: '#/components/schemas/DeviceApiError' } } }
+  schemas:
+    MessageEnvelope:
+      type: object
+      required: [schemaVersion, messageId, devicePublicUid, bootId, sequenceNumber, monotonicUptimeMs, firmwareIdentity, hardwareIdentity, timeStatus]
+      properties:
+        schemaVersion: { type: string }
+        messageId: { type: string, format: uuid }
+        devicePublicUid: { type: string, maxLength: 160 }
+        bootId: { type: string, maxLength: 100 }
+        sequenceNumber: { type: string, pattern: '^\d+$', description: uint64 JSON string }
+        sentAt: { type: [string, 'null'], format: date-time }
+        monotonicUptimeMs: { type: string, pattern: '^\d+$', description: uint64 JSON string }
+        firmwareIdentity: { $ref: '#/components/schemas/FirmwareIdentity' }
+        hardwareIdentity: { $ref: '#/components/schemas/HardwareIdentity' }
+        timeStatus: { $ref: '#/components/schemas/TimeStatus' }
+    FirmwareIdentity:
+      type: object
+      required: [semanticVersion, securityVersion, algorithmVersion, buildReference]
+      properties:
+        semanticVersion: { type: string }
+        securityVersion: { type: integer, minimum: 0 }
+        algorithmVersion: { type: string }
+        buildReference: { type: string }
+    HardwareIdentity:
+      type: object
+      required: [model, revision, boardVariant]
+      properties:
+        model: { type: string }
+        revision: { type: string }
+        boardVariant: { type: string }
+    TimeStatus:
+      type: object
+      required: [state]
+      properties:
+        state: { type: string, enum: [synced, estimated, unsynced, invalid] }
+        lastSyncedAt: { type: [string, 'null'], format: date-time }
+        estimatedErrorMs: { type: [string, 'null'], pattern: '^\d+$' }
+    QualityFlag:
+      type: string
+      enum: [TARGET_CAPACITY_SATURATED, COUNT_MAY_BE_UNDERESTIMATED, RADAR_FRAME_LOSS, TRACK_ASSOCIATION_UNCERTAIN, CALIBRATION_INVALID, CLOCK_UNSYNCED, OFFLINE_GAP, COUNT_UNDERFLOW, MULTI_SENSOR_OVERLAP_UNCERTAIN, CONFIG_VERSION_MISMATCH, SENSOR_UNAVAILABLE, NETWORK_UPLOAD_DELAYED, LOCAL_BUFFER_NEAR_CAPACITY, DEVICE_REBOOT_DURING_WINDOW]
+    CountWindowTelemetry:
+      type: object
+      required: [envelope, restaurantAssignmentVersion, doorPublicReference, calibrationVersion, windowDurationMs, entryDelta, exitDelta, targetCountPeak, capacitySaturated, saturationDurationMs, radarFrameCount, droppedFrameCount, qualityFlags, algorithmVersion, configChecksum]
+      properties:
+        envelope: { $ref: '#/components/schemas/MessageEnvelope' }
+        restaurantAssignmentVersion: { type: string }
+        doorPublicReference: { type: string }
+        calibrationVersion: { type: string }
+        windowStart: { type: [string, 'null'], format: date-time }
+        windowEnd: { type: [string, 'null'], format: date-time }
+        windowDurationMs: { type: integer, minimum: 1 }
+        entryDelta: { type: integer, minimum: 0 }
+        exitDelta: { type: integer, minimum: 0 }
+        localOccupancyCandidate: { type: [integer, 'null'] }
+        waitingCountCandidate: { type: [integer, 'null'], minimum: 0 }
+        targetCountPeak: { type: integer, minimum: 0 }
+        capacitySaturated: { type: boolean }
+        saturationDurationMs: { type: integer, minimum: 0 }
+        radarFrameCount: { type: integer, minimum: 0 }
+        droppedFrameCount: { type: integer, minimum: 0 }
+        qualityFlags: { type: array, uniqueItems: true, items: { $ref: '#/components/schemas/QualityFlag' } }
+        algorithmVersion: { type: string }
+        configChecksum: { type: string }
+    UploadBatch:
+      type: object
+      required: [batchId, firstSequenceNumber, lastSequenceNumber, countWindows, offlineBuffered]
+      properties:
+        batchId: { type: string, format: uuid }
+        firstSequenceNumber: { type: string, pattern: '^\d+$' }
+        lastSequenceNumber: { type: string, pattern: '^\d+$' }
+        countWindows:
+          type: array
+          minItems: 1
+          description: Production maxItems is configuration-controlled and intentionally not finalized in Phase 8.
+          items: { $ref: '#/components/schemas/CountWindowTelemetry' }
+        heartbeat: { $ref: '#/components/schemas/DeviceHeartbeat' }
+        batchCreatedAt: { type: [string, 'null'], format: date-time }
+        offlineBuffered: { type: boolean }
+        oldestBufferedAt: { type: [string, 'null'], format: date-time }
+    DeviceHeartbeat:
+      type: object
+      required: [envelope, currentFirmwareVersion, securityVersion, activePartition, uptimeSeconds, rebootCount, lastResetReason, freeHeapBytes, minimumFreeHeapBytes, wifiRssi, networkConnected, timeStatus, radarStatus, offlineBufferCount, currentCalibrationVersion, currentConfigurationVersion, health]
+      properties:
+        envelope: { $ref: '#/components/schemas/MessageEnvelope' }
+        currentFirmwareVersion: { type: string }
+        securityVersion: { type: integer, minimum: 0 }
+        activePartition: { type: string }
+        uptimeSeconds: { type: string, pattern: '^\d+$' }
+        rebootCount: { type: integer, minimum: 0 }
+        lastResetReason: { type: string }
+        freeHeapBytes: { type: string, pattern: '^\d+$' }
+        minimumFreeHeapBytes: { type: string, pattern: '^\d+$' }
+        wifiRssi: { type: integer }
+        networkConnected: { type: boolean }
+        timeStatus: { $ref: '#/components/schemas/TimeStatus' }
+        radarStatus: { type: string, enum: [ready, degraded, unavailable] }
+        lastValidRadarFrameAt: { type: [string, 'null'], format: date-time }
+        lastSuccessfulUploadAt: { type: [string, 'null'], format: date-time }
+        offlineBufferCount: { type: integer, minimum: 0 }
+        currentCalibrationVersion: { type: string }
+        currentConfigurationVersion: { type: string }
+        pendingOtaDeploymentId: { type: [string, 'null'] }
+        health: { $ref: '#/components/schemas/DeviceHealth' }
+    SafeDiagnostic:
+      type: object
+      required: [code, summary, safeMetadata]
+      properties:
+        code: { type: string }
+        summary: { type: string, maxLength: 300 }
+        safeMetadata: { type: object, additionalProperties: { type: string } }
+    RadarHealth:
+      type: object
+      required: [status, validFrameCount, droppedFrameCount, diagnostics]
+      properties:
+        status: { type: string, enum: [ready, degraded, unavailable] }
+        lastValidFrameAt: { type: [string, 'null'], format: date-time }
+        validFrameCount: { type: string, pattern: '^\d+$' }
+        droppedFrameCount: { type: string, pattern: '^\d+$' }
+        diagnostics: { type: array, items: { $ref: '#/components/schemas/SafeDiagnostic' } }
+    NetworkHealth:
+      type: object
+      required: [connected, wifiRssi, consecutiveUploadFailures, diagnostics]
+      properties:
+        connected: { type: boolean }
+        wifiRssi: { type: integer }
+        lastSuccessfulUploadAt: { type: [string, 'null'], format: date-time }
+        consecutiveUploadFailures: { type: integer, minimum: 0 }
+        diagnostics: { type: array, items: { $ref: '#/components/schemas/SafeDiagnostic' } }
+    DeviceHealth:
+      type: object
+      required: [freeHeapBytes, minimumFreeHeapBytes, radar, network, diagnostics]
+      properties:
+        freeHeapBytes: { type: string, pattern: '^\d+$' }
+        minimumFreeHeapBytes: { type: string, pattern: '^\d+$' }
+        radar: { $ref: '#/components/schemas/RadarHealth' }
+        network: { $ref: '#/components/schemas/NetworkHealth' }
+        diagnostics: { type: array, items: { $ref: '#/components/schemas/SafeDiagnostic' } }
+    DeviceConfiguration:
+      type: object
+      required: [configurationVersion, checksum, door, topology, coverageSegment, overlapPolicy, calibration, algorithm, upload, validFrom]
+      properties:
+        configurationVersion: { type: string }
+        checksum: { type: string }
+        door: { $ref: '#/components/schemas/DoorReference' }
+        topology: { type: string, enum: [single, dualNonOverlap, dualOverlap] }
+        coverageSegment: { type: string }
+        overlapPolicy: { type: string }
+        calibration: { $ref: '#/components/schemas/DoorCalibration' }
+        algorithm: { $ref: '#/components/schemas/AlgorithmConfiguration' }
+        upload: { $ref: '#/components/schemas/UploadConfiguration' }
+        validFrom: { type: string, format: date-time }
+    DoorReference:
+      type: object
+      required: [doorPublicReference, assignmentVersion]
+      properties:
+        doorPublicReference: { type: string }
+        assignmentVersion: { type: string }
+    Point2D:
+      type: object
+      required: [xMm, yMm]
+      properties:
+        xMm: { type: integer }
+        yMm: { type: integer }
+    Matrix3x3:
+      type: object
+      required: [values]
+      properties:
+        values:
+          type: array
+          minItems: 9
+          maxItems: 9
+          items: { type: number }
+    PolygonZone:
+      type: object
+      required: [vertices]
+      properties:
+        vertices:
+          type: array
+          minItems: 3
+          items: { $ref: '#/components/schemas/Point2D' }
+    DoorCalibration:
+      type: object
+      required: [calibrationVersion, mountHeightMm, mountPitchDeg, mountYawDeg, mountRollDeg, sensorToDoorTransform, doorLineStart, doorLineEnd, insideZone, outsideZone, bufferZone, hysteresisWidthMm, directionSign, checksum, validFrom]
+      properties:
+        calibrationVersion: { type: string }
+        mountHeightMm: { type: integer, minimum: 1 }
+        mountPitchDeg: { type: number }
+        mountYawDeg: { type: number }
+        mountRollDeg: { type: number }
+        sensorToDoorTransform: { $ref: '#/components/schemas/Matrix3x3' }
+        doorLineStart: { $ref: '#/components/schemas/Point2D' }
+        doorLineEnd: { $ref: '#/components/schemas/Point2D' }
+        insideZone: { $ref: '#/components/schemas/PolygonZone' }
+        outsideZone: { $ref: '#/components/schemas/PolygonZone' }
+        bufferZone: { $ref: '#/components/schemas/PolygonZone' }
+        hysteresisWidthMm: { type: integer, minimum: 0 }
+        directionSign: { type: integer, enum: [-1, 1] }
+        checksum: { type: string }
+        validFrom: { type: string, format: date-time }
+    AlgorithmConfiguration:
+      type: object
+      required: [outsideConfirmMs, insideConfirmMs, bufferTimeoutMs, lostTrackGraceMs, duplicateEventCooldownMs, maximumTrackJumpMm, minimumCrossingDistanceMm, saturationConfirmMs, waitingThresholdMs, maximumReasonableSpeed, algorithmVersion]
+      properties:
+        outsideConfirmMs: { type: integer, minimum: 0 }
+        insideConfirmMs: { type: integer, minimum: 0 }
+        bufferTimeoutMs: { type: integer, minimum: 0 }
+        lostTrackGraceMs: { type: integer, minimum: 0 }
+        duplicateEventCooldownMs: { type: integer, minimum: 0 }
+        maximumTrackJumpMm: { type: integer, minimum: 0 }
+        minimumCrossingDistanceMm: { type: integer, minimum: 0 }
+        saturationConfirmMs: { type: integer, minimum: 0 }
+        waitingThresholdMs: { type: integer, minimum: 0 }
+        maximumReasonableSpeed: { type: number, exclusiveMinimum: 0 }
+        algorithmVersion: { type: string }
+    UploadConfiguration:
+      type: object
+      required: [targetWindowDurationMs, maximumWindowsPerBatch, maximumPayloadBytes, maximumOfflineBufferAgeMs, requestTimeoutMs, heartbeatIntervalMs]
+      properties:
+        targetWindowDurationMs: { type: integer, minimum: 1 }
+        maximumWindowsPerBatch: { type: integer, minimum: 1 }
+        maximumPayloadBytes: { type: integer, minimum: 1 }
+        maximumOfflineBufferAgeMs: { type: string, pattern: '^\d+$' }
+        requestTimeoutMs: { type: integer, minimum: 1 }
+        heartbeatIntervalMs: { type: integer, minimum: 1 }
+    DeviceCommand:
+      type: object
+      required: [commandId, type, commandVersion, safeParameters]
+      properties:
+        commandId: { type: string }
+        type: { type: string, enum: [refreshConfiguration, restartDevice, beginOta, cancelOta, reportHealth] }
+        commandVersion: { type: string }
+        notBefore: { type: [string, 'null'], format: date-time }
+        expiresAt: { type: [string, 'null'], format: date-time }
+        safeParameters: { type: object, additionalProperties: { type: string } }
+    ConfigurationAck:
+      allOf:
+        - $ref: '#/components/schemas/AckBase'
+        - type: object
+          required: [configurationVersion, checksum]
+          properties:
+            configurationVersion: { type: string }
+            checksum: { type: string }
+    CommandAck:
+      allOf:
+        - $ref: '#/components/schemas/AckBase'
+        - type: object
+          required: [commandId]
+          properties:
+            commandId: { type: string }
+    AckBase:
+      type: object
+      required: [requestId, messageId, status, acknowledgedAt]
+      properties:
+        requestId: { type: string }
+        messageId: { type: string, format: uuid }
+        status: { type: string, enum: [accepted, applied, rejected, failed] }
+        safeErrorCode: { type: [string, 'null'] }
+        safeMessage: { type: [string, 'null'], maxLength: 300 }
+        acknowledgedAt: { type: string, format: date-time }
+    FirmwareManifest:
+      type: object
+      required: [deploymentId, releaseId, semanticVersion, securityVersion, hardwareCompatibility, minimumBootloaderVersion, artifact, releaseChannel, mandatory, manifestVersion, manifestIntegrity]
+      properties:
+        deploymentId: { type: string }
+        releaseId: { type: string }
+        semanticVersion: { type: string }
+        securityVersion: { type: integer, minimum: 0 }
+        hardwareCompatibility: { type: array, items: { type: string } }
+        minimumBootloaderVersion: { type: string }
+        minimumCurrentVersion: { type: [string, 'null'] }
+        maximumCurrentVersion: { type: [string, 'null'] }
+        artifact: { $ref: '#/components/schemas/FirmwareArtifact' }
+        releaseChannel: { type: string }
+        rolloutDeadline: { type: [string, 'null'], format: date-time }
+        mandatory: { type: boolean }
+        recoveryReleaseReference: { type: [string, 'null'] }
+        manifestVersion: { type: string }
+        manifestIntegrity: { type: string }
+    FirmwareArtifact:
+      type: object
+      required: [artifactUrl, artifactSizeBytes, sha256, signatureMetadata]
+      properties:
+        artifactUrl: { type: string, format: uri }
+        artifactSizeBytes: { type: string, pattern: '^\d+$' }
+        sha256: { type: string, pattern: '^[a-fA-F0-9]{64}$' }
+        signatureMetadata: { type: object, additionalProperties: { type: string } }
+    OtaProgress:
+      type: object
+      required: [envelope, deploymentId, state, progressPercent, bytesDownloaded, currentVersion, targetVersion, currentSecurityVersion, targetSecurityVersion, reportedAt]
+      properties:
+        envelope: { $ref: '#/components/schemas/MessageEnvelope' }
+        deploymentId: { type: string }
+        state: { $ref: '#/components/schemas/OtaState' }
+        progressPercent: { type: integer, minimum: 0, maximum: 100 }
+        bytesDownloaded: { type: string, pattern: '^\d+$' }
+        currentVersion: { type: string }
+        targetVersion: { type: string }
+        currentSecurityVersion: { type: integer, minimum: 0 }
+        targetSecurityVersion: { type: integer, minimum: 0 }
+        errorCode:
+          anyOf:
+            - $ref: '#/components/schemas/OtaErrorCode'
+            - type: 'null'
+        safeErrorDetail: { type: [string, 'null'], maxLength: 300 }
+        reportedAt: { type: string, format: date-time }
+    BootHealthReport:
+      type: object
+      required: [envelope, deploymentId, bootedVersion, bootedSecurityVersion, activePartition, nvsReadable, coreTasksStarted, watchdogHealthy, radarUartStarted, configurationValid, crashLoopDetected, networkStatus, localHealthPassed, reportTime, diagnostics]
+      properties:
+        envelope: { $ref: '#/components/schemas/MessageEnvelope' }
+        deploymentId: { type: string }
+        bootedVersion: { type: string }
+        bootedSecurityVersion: { type: integer, minimum: 0 }
+        activePartition: { type: string }
+        nvsReadable: { type: boolean }
+        coreTasksStarted: { type: boolean }
+        watchdogHealthy: { type: boolean }
+        radarUartStarted: { type: boolean }
+        configurationValid: { type: boolean }
+        crashLoopDetected: { type: boolean }
+        networkStatus: { type: string }
+        localHealthPassed: { type: boolean }
+        reportTime: { type: string, format: date-time }
+        diagnostics: { type: array, items: { $ref: '#/components/schemas/SafeDiagnostic' } }
+    OtaState:
+      type: string
+      enum: [offered, accepted, downloading, verifyingHash, verifyingSignature, checkingCompatibility, writingInactivePartition, pendingReboot, bootingCandidate, healthCheck, confirmed, rollbackStarted, rolledBack, failed, paused, withdrawn, rejectedSecurityVersion]
+    OtaErrorCode:
+      type: string
+      enum: [network, timeout, hashMismatch, signatureInvalid, hardwareIncompatible, bootloaderIncompatible, versionIncompatible, securityVersionRejected, storage, writeFailed, healthCheckFailed, campaignPaused, deploymentWithdrawn, unknown]
+    RejectedItem:
+      type: object
+      required: [messageId, sequenceNumber, safeErrorCode, retryable, safeMessage]
+      properties:
+        messageId: { type: string, format: uuid }
+        sequenceNumber: { type: string, pattern: '^\d+$' }
+        safeErrorCode: { type: string }
+        retryable: { type: boolean }
+        safeMessage: { type: string, maxLength: 300 }
+    TelemetryAck:
+      type: object
+      required: [requestId, batchId, acceptedMessageIds, acceptedOutOfOrderMessageIds, duplicateMessageIds, rejectedItems, highestContiguousSequence, serverReceivedAt, configurationUpdateAvailable, otaUpdateAvailable]
+      properties:
+        requestId: { type: string }
+        batchId: { type: string, format: uuid }
+        acceptedMessageIds: { type: array, items: { type: string, format: uuid } }
+        acceptedOutOfOrderMessageIds: { type: array, items: { type: string, format: uuid } }
+        duplicateMessageIds: { type: array, items: { type: string, format: uuid } }
+        rejectedItems: { type: array, items: { $ref: '#/components/schemas/RejectedItem' } }
+        highestContiguousSequence: { type: [string, 'null'], pattern: '^\d+$' }
+        serverReceivedAt: { type: string, format: date-time }
+        recommendedRetryAfterMs: { type: [integer, 'null'], minimum: 0 }
+        configurationUpdateAvailable: { type: boolean }
+        otaUpdateAvailable: { type: boolean }
+    BasicAck:
+      type: object
+      required: [requestId, messageId, serverReceivedAt]
+      properties:
+        requestId: { type: string }
+        messageId: { type: string, format: uuid }
+        serverReceivedAt: { type: string, format: date-time }
+    DeviceApiError:
+      type: object
+      required: [code, message, requestId, retryable]
+      properties:
+        code: { type: string, enum: [AUTHENTICATION, REPLAY, VALIDATION, PAYLOAD_TOO_LARGE, RATE_LIMITED, NOT_FOUND, CONFLICT, SERVER, UNKNOWN] }
+        message: { type: string, maxLength: 300 }
+        requestId: { type: string }
+        retryable: { type: boolean }
+        retryAfterMs: { type: [integer, 'null'], minimum: 0 }

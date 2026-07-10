@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package nana.device.v1;
+
+import "google/protobuf/timestamp.proto";
+import "contracts/proto/v1/device_common.proto";
+
+enum DoorTopology {
+  DOOR_TOPOLOGY_UNSPECIFIED = 0;
+  DOOR_TOPOLOGY_SINGLE = 1;
+  DOOR_TOPOLOGY_DUAL_NON_OVERLAP = 2;
+  DOOR_TOPOLOGY_DUAL_OVERLAP = 3;
+}
+
+enum CommandType {
+  COMMAND_TYPE_UNSPECIFIED = 0;
+  COMMAND_TYPE_REFRESH_CONFIGURATION = 1;
+  COMMAND_TYPE_RESTART_DEVICE = 2;
+  COMMAND_TYPE_BEGIN_OTA = 3;
+  COMMAND_TYPE_CANCEL_OTA = 4;
+  COMMAND_TYPE_REPORT_HEALTH = 5;
+}
+
+enum AckStatus {
+  ACK_STATUS_UNSPECIFIED = 0;
+  ACK_STATUS_ACCEPTED = 1;
+  ACK_STATUS_APPLIED = 2;
+  ACK_STATUS_REJECTED = 3;
+  ACK_STATUS_FAILED = 4;
+}
+
+message Point2D {
+  sint32 x_mm = 1;
+  sint32 y_mm = 2;
+}
+
+message Matrix3x3 {
+  repeated double values = 1; // Exactly nine row-major values.
+}
+
+message PolygonZone {
+  repeated Point2D vertices = 1;
+}
+
+message DoorCalibration {
+  string calibration_version = 1;
+  uint32 mount_height_mm = 2;
+  double mount_pitch_deg = 3;
+  double mount_yaw_deg = 4;
+  double mount_roll_deg = 5;
+  Matrix3x3 sensor_to_door_transform = 6;
+  Point2D door_line_start = 7;
+  Point2D door_line_end = 8;
+  PolygonZone inside_zone = 9;
+  PolygonZone outside_zone = 10;
+  PolygonZone buffer_zone = 11;
+  uint32 hysteresis_width_mm = 12;
+  sint32 direction_sign = 13; // Must be -1 or 1.
+  string checksum = 14;
+  google.protobuf.Timestamp valid_from = 15;
+}
+
+message AlgorithmConfiguration {
+  uint32 outside_confirm_ms = 1;
+  uint32 inside_confirm_ms = 2;
+  uint32 buffer_timeout_ms = 3;
+  uint32 lost_track_grace_ms = 4;
+  uint32 duplicate_event_cooldown_ms = 5;
+  uint32 maximum_track_jump_mm = 6;
+  uint32 minimum_crossing_distance_mm = 7;
+  uint32 saturation_confirm_ms = 8;
+  uint32 waiting_threshold_ms = 9;
+  double maximum_reasonable_speed = 10;
+  string algorithm_version = 11;
+}
+
+message UploadConfiguration {
+  uint32 target_window_duration_ms = 1;
+  uint32 maximum_windows_per_batch = 2;
+  uint32 maximum_payload_bytes = 3;
+  uint64 maximum_offline_buffer_age_ms = 4;
+  uint32 request_timeout_ms = 5;
+  uint32 heartbeat_interval_ms = 6;
+}
+
+message DeviceConfiguration {
+  string configuration_version = 1;
+  string checksum = 2;
+  DoorReference door = 3;
+  DoorTopology topology = 4;
+  string coverage_segment = 5;
+  string overlap_policy = 6;
+  DoorCalibration calibration = 7;
+  AlgorithmConfiguration algorithm = 8;
+  UploadConfiguration upload = 9;
+  google.protobuf.Timestamp valid_from = 10;
+}
+
+message DeviceCommand {
+  string command_id = 1;
+  CommandType type = 2;
+  string command_version = 3;
+  optional google.protobuf.Timestamp not_before = 4;
+  optional google.protobuf.Timestamp expires_at = 5;
+  map<string, string> safe_parameters = 6;
+}
+
+message DeviceCommandBatch {
+  string request_id = 1;
+  repeated DeviceCommand commands = 2;
+  google.protobuf.Timestamp server_received_at = 3;
+}
+
+message ConfigurationAck {
+  string request_id = 1;
+  string message_id = 2;
+  string configuration_version = 3;
+  string checksum = 4;
+  AckStatus status = 5;
+  optional string safe_error_code = 6;
+  optional string safe_message = 7;
+  google.protobuf.Timestamp acknowledged_at = 8;
+}
+
+message CommandAck {
+  string request_id = 1;
+  string message_id = 2;
+  string command_id = 3;
+  AckStatus status = 4;
+  optional string safe_error_code = 5;
+  optional string safe_message = 6;
+  google.protobuf.Timestamp acknowledged_at = 7;
+}
