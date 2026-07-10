@@ -26,6 +26,14 @@ export interface ApiError {
   code: ApiErrorCode
   message: string
   requestId?: string
+  retryAfterSeconds?: number
+  details?: ApiErrorDetails
+}
+
+export interface ApiErrorDetails {
+  field?: string
+  reason?: string
+  limit?: number
 }
 
 export interface ApiResponse<T> {

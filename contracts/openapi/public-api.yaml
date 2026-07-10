@@ -1,0 +1,373 @@
+openapi: 3.1.0
+info:
+  title: NaNa Public API
+  version: 0.1.0-draft
+  description: >-
+    Public API contract draft for NaNa restaurant discovery. This document defines
+    a future backend boundary only; it does not represent a deployed API.
+paths:
+  /public/restaurants:
+    get:
+      summary: 取得公開餐廳列表
+      operationId: listPublicRestaurants
+      parameters:
+        - $ref: '#/components/parameters/Query'
+        - $ref: '#/components/parameters/Category'
+        - $ref: '#/components/parameters/OpenNow'
+        - $ref: '#/components/parameters/CrowdLevel'
+        - $ref: '#/components/parameters/HasOnlineOrder'
+        - $ref: '#/components/parameters/IsSponsored'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: 公開餐廳列表與 cursor pagination
+          headers:
+            ETag:
+              schema: { type: string }
+            Cache-Control:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantListResponse'
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimitedError' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /public/restaurants/{slug}:
+    get:
+      summary: 取得公開店家詳情
+      operationId: getPublicRestaurantBySlug
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: 公開店家詳情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantDetailResponse'
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '429': { $ref: '#/components/responses/RateLimitedError' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /public/restaurants/{slug}/menu:
+    get:
+      summary: 取得公開菜單預覽
+      operationId: getPublicRestaurantMenu
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: 菜單預覽，不包含購物車、付款、訂單或 POS 資料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantMenuResponse'
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '429': { $ref: '#/components/responses/RateLimitedError' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /public/live-status:batch:
+    post:
+      summary: 批次取得可見店家的 Live Status
+      operationId: batchPublicLiveStatuses
+      description: >-
+        Client sends visible restaurant IDs in one request. Server trims values,
+        removes duplicates, applies deterministic ordering, and rejects requests
+        containing more than 20 IDs after normalization.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LiveStatusBatchRequest'
+      responses:
+        '200':
+          description: Restaurant-level live snapshots
+          headers:
+            Cache-Control:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveStatusBatchResponse'
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimitedError' }
+        '500': { $ref: '#/components/responses/ServerError' }
+components:
+  parameters:
+    Query:
+      name: q
+      in: query
+      schema: { type: string, maxLength: 100 }
+    Category:
+      name: category
+      in: query
+      schema: { $ref: '#/components/schemas/RestaurantCategory' }
+    OpenNow:
+      name: openNow
+      in: query
+      schema: { type: boolean }
+    CrowdLevel:
+      name: crowdLevel
+      in: query
+      schema: { $ref: '#/components/schemas/CrowdLevel' }
+    HasOnlineOrder:
+      name: hasOnlineOrder
+      in: query
+      schema: { type: boolean }
+    IsSponsored:
+      name: isSponsored
+      in: query
+      schema: { type: boolean }
+    Sort:
+      name: sort
+      in: query
+      schema:
+        type: string
+        enum: [recommended, distance, waitTime, crowdLevel]
+        default: recommended
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: [string, 'null'], maxLength: 200 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+    Slug:
+      name: slug
+      in: path
+      required: true
+      schema: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', maxLength: 100 }
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema: { type: string, maxLength: 100 }
+  responses:
+    ValidationError:
+      description: 請求參數不符合 contract
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    NotFoundError:
+      description: 公開資源不存在或尚未開放
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    RateLimitedError:
+      description: 請求頻率超過限制
+      headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    ServerError:
+      description: 安全的一般服務錯誤，不包含內部例外內容
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+  schemas:
+    ApiMeta:
+      type: object
+      required: [requestId, receivedAt]
+      properties:
+        requestId: { type: string }
+        receivedAt: { type: string, format: date-time }
+        freshness: { $ref: '#/components/schemas/DataFreshness' }
+    PaginationMeta:
+      type: object
+      required: [cursor, nextCursor, limit, hasMore]
+      properties:
+        cursor: { type: [string, 'null'] }
+        nextCursor: { type: [string, 'null'] }
+        limit: { type: integer, minimum: 1, maximum: 50 }
+        hasMore: { type: boolean }
+    RestaurantListResponse:
+      type: object
+      required: [data, meta, pagination]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/RestaurantListItem' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+        pagination: { $ref: '#/components/schemas/PaginationMeta' }
+    RestaurantDetailResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RestaurantDetail' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    RestaurantMenuResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RestaurantMenu' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    RestaurantListItem:
+      type: object
+      required: [id, slug, name, category, categoryLabel, tags, coverImage, status, crowdLevel, freshness, isSponsored, sponsorLevel, hasOnlineOrder]
+      properties:
+        id: { type: string, description: Public restaurant identifier }
+        slug: { type: string }
+        name: { type: string }
+        category: { $ref: '#/components/schemas/RestaurantCategory' }
+        categoryLabel: { type: string }
+        tags: { type: array, items: { type: string }, maxItems: 20 }
+        coverImage: { type: string }
+        distanceMeters: { type: [integer, 'null'], minimum: 0 }
+        walkingMinutes: { type: [integer, 'null'], minimum: 0 }
+        status: { type: string, enum: [open, closed, unknown] }
+        crowdLevel: { $ref: '#/components/schemas/CrowdLevel' }
+        trafficCount: { type: [integer, 'null'], minimum: 0, description: Flow count, not in-store occupancy }
+        waitingCount: { type: [integer, 'null'], minimum: 0 }
+        estimatedWaitMinutes: { type: [integer, 'null'], minimum: 0 }
+        occupancyEstimate: { type: [integer, 'null'], minimum: 0 }
+        occupancyConfidence: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        freshness: { $ref: '#/components/schemas/DataFreshness' }
+        observedAt: { type: [string, 'null'], format: date-time }
+        receivedAt: { type: [string, 'null'], format: date-time }
+        isSponsored: { type: boolean }
+        sponsorLevel: { type: string, enum: [none, standard, premium] }
+        hasOnlineOrder: { type: boolean }
+        onlineOrderUrl: { type: [string, 'null'] }
+        promotion: { $ref: '#/components/schemas/RestaurantPromotion' }
+    RestaurantDetail:
+      allOf:
+        - $ref: '#/components/schemas/RestaurantListItem'
+        - type: object
+          required: [description, businessHours, notices, location]
+          properties:
+            description: { type: string }
+            businessHours:
+              type: array
+              items: { $ref: '#/components/schemas/RestaurantBusinessHour' }
+            notices:
+              type: array
+              items: { $ref: '#/components/schemas/RestaurantNotice' }
+            location: { $ref: '#/components/schemas/RestaurantLocationPreview' }
+    RestaurantPromotion:
+      type: [object, 'null']
+      properties:
+        label: { type: string }
+        description: { type: string }
+        validUntil: { type: [string, 'null'], format: date-time }
+    RestaurantBusinessHour:
+      type: object
+      required: [dayLabel, openTime, closeTime, isClosed]
+      properties:
+        dayLabel: { type: string }
+        openTime: { type: [string, 'null'], pattern: '^\d{2}:\d{2}$' }
+        closeTime: { type: [string, 'null'], pattern: '^\d{2}:\d{2}$' }
+        isClosed: { type: boolean }
+    RestaurantNotice:
+      type: object
+      required: [title, content]
+      properties:
+        title: { type: string, maxLength: 100 }
+        content: { type: string, maxLength: 1000 }
+    RestaurantLocationPreview:
+      type: object
+      required: [areaLabel, summary]
+      properties:
+        areaLabel: { type: string }
+        summary: { type: string }
+    RestaurantMenu:
+      type: object
+      required: [restaurantSlug, categories]
+      properties:
+        restaurantSlug: { type: string }
+        categories:
+          type: array
+          items: { $ref: '#/components/schemas/RestaurantMenuCategory' }
+    RestaurantMenuCategory:
+      type: object
+      required: [id, name, items]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/RestaurantMenuItem' }
+    RestaurantMenuItem:
+      type: object
+      required: [id, name, price, description, availability, isRecommended, isPopular]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        price: { type: number, minimum: 0 }
+        description: { type: string }
+        availability: { type: string, enum: [available, soldOut, hidden] }
+        isRecommended: { type: boolean }
+        isPopular: { type: boolean }
+    LiveStatusBatchRequest:
+      type: object
+      required: [restaurantIds]
+      properties:
+        restaurantIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: { type: string, minLength: 1, maxLength: 100 }
+          description: Duplicates are accepted at transport boundary then normalized by server.
+    LiveStatusBatchResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [statuses]
+          properties:
+            statuses:
+              type: array
+              items: { $ref: '#/components/schemas/RestaurantLiveStatus' }
+        meta: { $ref: '#/components/schemas/ApiMeta' }
+    RestaurantLiveStatus:
+      type: object
+      required: [restaurantId, trafficCount, trafficWindowSeconds, waitingCount, estimatedWaitMinutes, waitTimeConfidence, crowdLevel, occupancyEstimate, occupancyConfidence, freshness, observedAt, receivedAt]
+      properties:
+        restaurantId: { type: string }
+        trafficCount: { type: [integer, 'null'], minimum: 0, description: Flow count, never occupancy }
+        trafficWindowSeconds: { type: [integer, 'null'], minimum: 1 }
+        waitingCount: { type: [integer, 'null'], minimum: 0 }
+        estimatedWaitMinutes: { type: [integer, 'null'], minimum: 0 }
+        waitTimeConfidence: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        crowdLevel: { $ref: '#/components/schemas/CrowdLevel' }
+        occupancyEstimate: { type: [integer, 'null'], minimum: 0 }
+        occupancyConfidence: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        freshness: { $ref: '#/components/schemas/DataFreshness' }
+        observedAt: { type: [string, 'null'], format: date-time }
+        receivedAt: { type: [string, 'null'], format: date-time }
+    ApiError:
+      type: object
+      required: [code, message, requestId]
+      properties:
+        code:
+          type: string
+          enum: [NETWORK, TIMEOUT, VALIDATION, NOT_FOUND, RATE_LIMITED, SERVER, CONFIGURATION, UNKNOWN]
+        message: { type: string, maxLength: 300 }
+        requestId: { type: string }
+        retryAfterSeconds: { type: integer, minimum: 1 }
+        details:
+          type: object
+          additionalProperties: false
+          properties:
+            field: { type: string }
+            reason: { type: string }
+            limit: { type: integer }
+    RestaurantCategory:
+      type: string
+      enum: [ramen, breakfast, bento, drinks, izakaya, pizza, other]
+    CrowdLevel:
+      type: string
+      enum: [empty, low, moderate, busy, peak, closed, unknown]
+    DataFreshness:
+      type: string
+      enum: [fresh, delayed, stale, unavailable]

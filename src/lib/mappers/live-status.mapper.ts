@@ -18,9 +18,11 @@ export function toRestaurantLiveStatus(raw: unknown): RestaurantLiveStatus {
   return {
     restaurantId: raw.id,
     trafficCount: raw.trafficCount,
+    trafficWindowSeconds: raw.trafficWindowSeconds,
     waitingCount: raw.waitingCount,
     crowdLevel: raw.crowdLevel,
     estimatedWaitMinutes: raw.estimatedWaitMinutes,
+    waitTimeConfidence: raw.waitTimeConfidence,
     occupancyEstimate: raw.occupancyEstimate,
     occupancyConfidence: raw.occupancyConfidence,
     freshness: raw.freshness,

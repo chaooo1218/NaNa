@@ -16,9 +16,11 @@ export interface MockRestaurantFixture {
   walkingMinutes: number | null
   status: RestaurantStatus
   trafficCount: number | null
+  trafficWindowSeconds: number | null
   waitingCount: number | null
   crowdLevel: CrowdLevel
   estimatedWaitMinutes: number | null
+  waitTimeConfidence: number | null
   occupancyEstimate: number | null
   occupancyConfidence: number | null
   freshness: DataFreshness
@@ -51,9 +53,11 @@ export const mockRestaurantFixtures: MockRestaurantFixture[] = [
     walkingMinutes: 2,
     status: "open",
     trafficCount: 14,
+    trafficWindowSeconds: 300,
     waitingCount: 1,
     crowdLevel: "low",
     estimatedWaitMinutes: 3,
+    waitTimeConfidence: 0.82,
     occupancyEstimate: null,
     occupancyConfidence: null,
     freshness: "fresh",
@@ -82,9 +86,11 @@ export const mockRestaurantFixtures: MockRestaurantFixture[] = [
     walkingMinutes: 3,
     status: "open",
     trafficCount: 18,
+    trafficWindowSeconds: 300,
     waitingCount: 0,
     crowdLevel: "low",
     estimatedWaitMinutes: 0,
+    waitTimeConfidence: 0.86,
     occupancyEstimate: null,
     occupancyConfidence: null,
     freshness: "fresh",
@@ -113,9 +119,11 @@ export const mockRestaurantFixtures: MockRestaurantFixture[] = [
     walkingMinutes: 4,
     status: "open",
     trafficCount: 32,
+    trafficWindowSeconds: 300,
     waitingCount: 2,
     crowdLevel: "moderate",
     estimatedWaitMinutes: 5,
+    waitTimeConfidence: 0.78,
     occupancyEstimate: null,
     occupancyConfidence: null,
     freshness: "fresh",
@@ -144,9 +152,11 @@ export const mockRestaurantFixtures: MockRestaurantFixture[] = [
     walkingMinutes: 5,
     status: "open",
     trafficCount: 76,
+    trafficWindowSeconds: 300,
     waitingCount: 5,
     crowdLevel: "busy",
     estimatedWaitMinutes: 15,
+    waitTimeConfidence: 0.64,
     occupancyEstimate: null,
     occupancyConfidence: null,
     freshness: "delayed",
@@ -175,9 +185,11 @@ export const mockRestaurantFixtures: MockRestaurantFixture[] = [
     walkingMinutes: 8,
     status: "open",
     trafficCount: 108,
+    trafficWindowSeconds: 300,
     waitingCount: 9,
     crowdLevel: "peak",
     estimatedWaitMinutes: 25,
+    waitTimeConfidence: 0.52,
     occupancyEstimate: null,
     occupancyConfidence: null,
     freshness: "stale",
@@ -206,9 +218,11 @@ export const mockRestaurantFixtures: MockRestaurantFixture[] = [
     walkingMinutes: 6,
     status: "closed",
     trafficCount: null,
+    trafficWindowSeconds: null,
     waitingCount: null,
     crowdLevel: "closed",
     estimatedWaitMinutes: null,
+    waitTimeConfidence: null,
     occupancyEstimate: null,
     occupancyConfidence: null,
     freshness: "unavailable",

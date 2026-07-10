@@ -72,3 +72,14 @@
 - 本 Phase 不呼叫遠端 API。
 - 本 Phase 不建立 Firebase、DigitalOcean、AWS、Mapbox、資料庫、快取、Queue 或 Worker。
 - 本 Phase 不宣稱目前系統已能承受 10,000 人同時使用。
+
+## Phase 6 快取與 reconnect storm 補強
+
+- 25% live polling 情境約為 2,500 active live clients；每 5 秒更新約 500 RPS baseline。
+- 10,000 active live clients 同時刷新約為 2,000 RPS burst。
+- reconnect storm 可能由網路恢復、版本發布或快取失效造成；需由 random jitter、rate limit、短快取與 stale fallback 降低同步壓力。
+- Restaurant basic data 使用較長快取、ETag 或 version；Live Status 使用短快取與 `stale-while-revalidate`。
+- Live Status cache key 必須使用 trim、去重、固定排序後的 normalized `restaurantIds`。
+- API 回應應設定 `Cache-Control`；超限回傳 `429` 與 `Retry-After`。
+- Client 維持 hidden/offline pause、bounded exponential backoff、abort on unmount 與 stale data fallback。
+- 正式承載能力仍需後端部署、cache implementation 與 load test 驗證。

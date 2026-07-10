@@ -20,9 +20,11 @@ export type CrowdMetricType =
 export interface RestaurantLiveStatus {
   restaurantId: string
   trafficCount: number | null
+  trafficWindowSeconds: number | null
   waitingCount: number | null
   crowdLevel: CrowdLevel
   estimatedWaitMinutes: number | null
+  waitTimeConfidence: number | null
   occupancyEstimate: number | null
   occupancyConfidence: number | null
   freshness: DataFreshness
