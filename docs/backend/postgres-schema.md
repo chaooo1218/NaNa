@@ -56,3 +56,67 @@
 ## Read Model 一致性
 
 本草案延續 Phase 6：Public list 以公開 profile/location/tag/status 查詢；detail 以 slug unique lookup；menu 以 restaurant/category/display order 查詢；Live Status 只讀 `restaurant_live_status_snapshots`。raw telemetry、device events、tenant/merchant/device identifiers 不進 Public API read path。
+## Phase 7.1：Device、Occupancy、Calibration 與 OTA Alignment
+
+> 本節與 SQL 均為架構草案，不代表資料庫、裝置上線、Secure Boot 或 OTA 已啟用。
+
+### Door 與多感測器拓撲
+
+| Table | Purpose / key columns | PK / FK / nullable | Public visibility | Retention / index / security notes |
+| --- | --- | --- | --- | --- |
+| `doors` | 餐廳出入口模型；`restaurant_id`、`public_label`、`topology`、`direction_convention`、`is_active`、timestamps | PK `id`；FK restaurant；`public_label` 同餐廳唯一 | 僅可經 mapper 回傳無內部 ID 的門口描述 | `restaurant_id + is_active`；不得包含裝置識別 |
+| `door_sensor_assignments` | 門口與感測器版本化配置；coverage segment、overlap policy、priority、configuration version、validity | PK `id`；FK door/device；`valid_to` nullable | 不公開 | 依 door/device + status 查詢；保留 assignment history |
+
+`topology` 僅允許 `single`、`dual_non_overlap`、`dual_overlap`。新安裝優先使用 `dual_non_overlap`；雙模組不得預設直接相加。`dual_overlap` 必須經後端去重，無法確定時標記 `MULTI_SENSOR_OVERLAP_UNCERTAIN`，不得把結果包裝成高信心資料。
+
+### Calibration
+
+`device_calibrations` 保存 device/door 的不可變版本，包含 mount height、pitch/yaw/roll、sensor-to-door transform、門線座標、inside/outside/buffer zones、hysteresis、direction sign、checksum、狀態與 audit reference。PK 為 `id`，FK 指向 tenant/device/door；`activated_at`、`superseded_at` nullable；`(device_id, calibration_version)` 與 checksum 唯一。
+
+正式校正不可原地覆寫。更正時新增版本，舊版本轉為 `superseded`，事件與窗口仍引用當時版本。狀態語意為 `draft`、`active`、`superseded`、`invalid`。
+
+### 五秒 Count Window 與 Crossing Ledger
+
+| Table | Purpose / key columns | Constraints | Public visibility | Retention direction |
+| --- | --- | --- | --- | --- |
+| `device_count_windows` | 每約 5 秒聚合；message/boot/sequence、schema/calibration version、window、entry/exit delta、候選 occupancy/waiting、frame/quality/firmware | `message_id` 唯一；`(device_id, boot_id, sequence_number)` 唯一；quality flags 為 JSONB array | 不公開 | 短期保存，彙總後刪除或歸檔 |
+| `door_crossing_events` | 穿越事件 ledger；restaurant/door/source device、sequence、direction、confidence、dedup/aggregation decision | `event_id` PK；`(restaurant_id, dedup_key)` 唯一 | 不公開 | 長於 count window；彙總後依政策歸檔 |
+
+Count Window 不保存 raw coordinate 或人物軌跡。唯一鍵提供重送 idempotency；boot/sequence 與時間索引讓後端辨識亂序。`local_occupancy_candidate` 只是裝置候選值，不能作為權威 occupancy。Quality flags 使用可擴充 JSONB 陣列，避免頻繁危險 enum migration。
+
+Crossing Event 只記 entry/exit，不保存永久人物 ID 或可識別追蹤資料。重疊拓撲必須記錄 dedup status、decision summary 與 quality flag。
+
+### Occupancy 權威模型
+
+| Table | Purpose / key columns | PK / FK / nullable | Public visibility | Retention / security notes |
+| --- | --- | --- | --- | --- |
+| `restaurant_occupancy_snapshots` | 後端由可信 crossing events 與人工修正計算的目前值 | PK/FK `restaurant_id`；display/confidence/timestamps nullable | 只經 live snapshot mapper 回傳可公開欄位 | 每餐廳唯一目前值；版本化更新 |
+| `occupancy_adjustments` | 人工或系統修正 ledger；delta 或 corrected value、reason、operator、before/after、audit | PK `id`；FK tenant/restaurant；operator id nullable；delta/corrected 二擇一 | 不公開 | 長期 audit retention；不可記錄 token/secret |
+
+`raw_occupancy` 可呈現負值以保留計算事實；不得靜默截為 0。發生 underflow 時建立 `COUNT_UNDERFLOW` incident，並可令 `display_occupancy = null`。Public API 只取得可安全顯示的 restaurant-level estimate/confidence，不取得 adjustment 或 operator 細節。
+
+### Quality Incident
+
+`device_quality_incidents` 保存 device/door/restaurant scope、incident code、severity、起訖時間、受影響窗口數、安全診斷摘要及 ack/resolution。支援：`TARGET_CAPACITY_SATURATED`、`COUNT_MAY_BE_UNDERESTIMATED`、`RADAR_FRAME_LOSS`、`TRACK_ASSOCIATION_UNCERTAIN`、`CALIBRATION_INVALID`、`CLOCK_UNSYNCED`、`OFFLINE_GAP`、`COUNT_UNDERFLOW`、`MULTI_SENSOR_OVERLAP_UNCERTAIN`。不得保存 secret、完整雷達人物軌跡或永久人物識別。
+
+### OTA Control Plane
+
+| Table | Purpose | Key columns / constraints | Public visibility | Retention / privacy notes |
+| --- | --- | --- | --- | --- |
+| `firmware_releases` | 韌體發布與核准狀態 | semantic/security version、hardware compatibility、minimum bootloader、status、audit reference | 不公開 | 保留發布與撤銷歷史 |
+| `firmware_artifacts` | Artifact 完整性 metadata | release、type、storage reference、SHA-256、signature metadata、size、signed | 不公開 | 僅 metadata；絕不保存 signing private key |
+| `ota_campaigns` | 分批 rollout 控制 | release、strategy、cohort、percentage、status、pause/withdraw reason | 不公開 | 保留 campaign audit history |
+| `ota_deployments` | 每裝置部署狀態 | campaign/device、前後版本與 security version、state/progress/error | 不公開 | device/campaign/state 索引；長期稽核方向 |
+| `ota_device_events` | 部署事件 ledger | deployment、event、version、progress/error、safe metadata、time | 不公開 | metadata 白名單；不得記錄憑證 |
+
+#### Anti-Rollback 語意
+
+- Semantic version 與 security version 分離；一般功能更新不可任意增加 security version。
+- Rollback 目標的 security version 必須大於或等於裝置 eFuse 記錄值。
+- 已撤銷的安全基準不可恢復；需預先準備符合目前 security version 的 recovery firmware。
+- 簽章私鑰不可進入 Repo、DB、Firmware、Artifact metadata 或 CI log。
+- 本 Phase 不啟用 Secure Boot、不燒 eFuse、不建立真實 Artifact，也不執行 OTA。
+
+### Public 邊界
+
+Public API 仍只讀取 restaurant-level profile、menu、`restaurant_live_status_snapshots` 與安全的 occupancy projection。不得直接查詢 doors 的內部配置、assignment、calibration、count windows、crossing events、quality incident、OTA 或 device identifiers。

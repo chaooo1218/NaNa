@@ -33,3 +33,17 @@
 ## 後續資料流
 
 Device Ingestion 先驗證裝置、去重與處理順序，再將有效事件聚合為 restaurant-level snapshot。Public read model 只消費聚合結果；Public API 再使用 mapper 過濾非公開欄位。
+## Phase 7.1 Projection Alignment
+
+Device Ingestion 的內部資料流方向為：
+
+`device_count_windows -> door_crossing_events -> restaurant_occupancy_snapshots -> restaurant_live_status_snapshots -> Public API`
+
+- `device_count_windows` 是約 5 秒裝置聚合，不是 raw coordinate storage，也不是 Public Read Model。
+- `door_crossing_events` 由後端依 calibration、door topology 與 dedup policy 建立；雙模組資料不可由前端直接相加。
+- `restaurant_occupancy_snapshots` 是後端事件與人工 adjustment 的權威計算結果。若 underflow、overlap 或資料品質不足，`display_occupancy` 可為 null。
+- `restaurant_live_status_snapshots.occupancy_estimate/confidence` 僅投影可安全公開的 occupancy；`traffic_count` 仍是時間窗流量，不等於店內人數。
+- Public API 不得查詢或回傳 door assignment、device/calibration id、count windows、crossing events、quality incidents、occupancy adjustments 或 OTA tables。
+- Public response 不包含永久人物 ID、人物軌跡、raw coordinates、device key、tenant/merchant id 或內部 dedup decision。
+
+此 alignment 不建立 ingestion worker、聚合作業或 API；正式 freshness、cache 與承載能力仍需後端實作及 load test 驗證。

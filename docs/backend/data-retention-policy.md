@@ -16,3 +16,21 @@
 - raw telemetry 與 debug data 不可無限保存。
 - Public API request logs 不存完整 request body、token、secret 或可避免的個資。
 - retention、archive、deletion job 需在正式 backend/infra phase 建立並可觀測；本文件不建立 job。
+## Phase 7.1 Retention Alignment
+
+以下皆為成本與法務審查前的建議區間，不是已上線政策。
+
+| Data level | Purpose | Suggested retention | Public | Aggregation / deletion direction | Cost risk |
+| --- | --- | --- | --- | --- | --- |
+| Device Count Window | 約 5 秒聚合、重送與品質診斷 | hot 7–30 天 | 否 | 先彙總 hourly/daily，再刪除或低成本歸檔 | 極高寫入量；禁止永久保存 |
+| Door Crossing Event | occupancy 計算與 dedup audit | 30–90 天，再依事件/法務需求歸檔 | 否 | 長於 count window；完成 metrics 後分區刪除/歸檔 | 高；重疊門口事件量增加 |
+| Occupancy Snapshot | 每餐廳目前權威狀態 | 僅目前值；必要時短歷史 | 只公開安全 projection | upsert/current projection | 低 |
+| Occupancy Adjustment | 人工/系統修正稽核 | 建議 1–3 年，待法務確認 | 否 | append-only、到期封存/刪除 | 中；含內部 operator reference |
+| Device Calibration | 重現歷史事件所需配置版本 | 裝置生命週期加稽核期 | 否 | immutable；superseded 不立即刪除 | 低 |
+| Quality Incident | 品質追蹤與 SLA 分析 | 90–365 天，依 severity 分級 | 否 | 摘要長留，診斷細節較早刪除 | 中；摘要需去敏 |
+| OTA Release/Campaign/Deployment Audit | 發布、撤銷、裝置升級稽核 | 建議 1–3 年或更長，待合約/法務確認 | 否 | append/event archive；不得保存 key | 中 |
+| OTA Device Event | OTA 問題診斷 | hot 90 天，摘要與關鍵失敗長留 | 否 | 事件壓縮/歸檔 | 高頻 rollout 時中至高 |
+| Raw Coordinate | 預設不進正式 schema | 不保存 | 否 | 若未來例外啟用，需獨立核准與極短 TTL | 最高隱私與儲存風險 |
+| Debug Data | 短期故障診斷 | 1–14 天 | 否 | 自動 TTL/delete | 高，且可能誤收敏感資料 |
+
+刪除工作、partition、archive storage 與法務 retention 尚未實作。Public request/OTA metadata 不得包含 token、device key、簽章私鑰、完整 request body 或雷達人物軌跡。

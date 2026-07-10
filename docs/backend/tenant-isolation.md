@@ -28,3 +28,13 @@
 ## 非目標
 
 本階段不實作 Auth、Firebase Auth、RBAC 程式碼、RLS policy 或 API middleware。
+## Phase 7.1 Device 與 OTA 隔離
+
+- `doors` 必須繼承 restaurant 的 tenant；`door_sensor_assignments` 的 door/device 必須同 tenant，以 composite FK 防止跨租戶配置。
+- Calibration、count windows、crossing events、quality incidents 皆帶內部 tenant scope，寫入時由已驗證 assignment 推導，不接受裝置任意指定 tenant/restaurant。
+- Occupancy snapshot 以 restaurant 為權威 scope；adjustment 必須同 tenant，operator internal id 與 audit reference 只供授權後台稽核。
+- Firmware release/artifact 可作平台級資產；OTA deployment 經 campaign cohort 與 device tenant scope 授權。Merchant 不得建立平台 release 或跨 tenant campaign。
+- Signing private key 不屬任何 tenant table，也不得存 DB。Artifact 只留 storage reference、hash 與 signature metadata。
+- Public API 僅以 restaurant public id/slug 讀 restaurant-level projection；不暴露 tenant、merchant、device、door assignment、calibration、incident、adjustment 或 OTA internal id。
+
+未來 Device Ingestion 必須先用裝置憑證解析 server-side device identity，再核對有效 door assignment 與 configuration/calibration version。Payload 中自報的 restaurant/tenant 不可作授權依據。Merchant API 僅能查看自身餐廳的摘要與授權診斷；Admin/OTA 操作需更高角色、雙人核准方向及 append-only audit。RLS 是否採用仍待 connection pool 與 service role 威脅模型驗證，本 Phase 不實作 Auth/RBAC/RLS。

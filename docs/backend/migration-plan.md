@@ -42,3 +42,20 @@
 | Dev | 可使用 disposable DB、測試 seed、完整 schema reset 流程 |
 | Staging | 使用 production-like migration order、遮罩測試資料、驗證 rollback |
 | Production | 需變更審查、備份、執行窗口、監控、rollback runbook；不可直接套用未審查草案 |
+## Phase 7.1 Migration Alignment
+
+本節只調整未來 migration 順序；本 Phase 不執行 SQL。
+
+1. 建立 door topology、crossing direction、calibration status 等穩定 lookup/enum。
+2. 在既有 restaurant/device 後建立 `doors`、`door_sensor_assignments`。
+3. 建立 immutable `device_calibrations`，再建立 `device_count_windows`。
+4. 建立 `door_crossing_events`、`device_quality_incidents`。
+5. 建立 `restaurant_occupancy_snapshots`、append-only `occupancy_adjustments`。
+6. 建立 firmware release/artifact，再建立 campaign/deployment/device event。
+7. 最後建立 query-driven indexes、唯一鍵、時間與 JSON shape constraints。
+
+校正與 audit ledger 採 expand/migrate/contract，已啟用版本不可原地覆寫。Count Window 的 `(device_id, boot_id, sequence_number)` 與 `message_id` 必須先驗證重複資料再加唯一約束。Occupancy backfill 要保留 underflow 並建立 incident，不可用 `GREATEST(value, 0)` 隱藏問題。
+
+OTA migration 不包含 artifact binary、signing private key、Secure Boot 設定或 eFuse 操作。Security version 規則需在 Device Contract 與後端驗證完成後才可進 production migration review。
+
+Rollback 不刪除 calibration、crossing、adjustment、OTA audit 歷史。若新 read path 需回退，停止寫入新表並切回舊 projection；涉及 security baseline 撤銷時不可藉 DB rollback 允許降級韌體。
