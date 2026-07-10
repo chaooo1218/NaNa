@@ -37,7 +37,11 @@ export async function getStaticPaths() {
 const { restaurant } = Astro.props
 ---
 
-<PublicLayout title={restaurant === null ? "找不到這間店家｜NaNa" : `${restaurant.name}｜NaNa`}>
+<PublicLayout
+  title={restaurant === null ? "找不到這間店家｜NaNa 人流" : `${restaurant.name}｜NaNa 人流`}
+  description={restaurant === null ? "找不到指定店家。返回 NaNa 人流附近店家列表查看目前支援的店家。" : `查看 ${restaurant.name} 的測試店家資料、人流狀態、等待時間與菜單預覽。`}
+  canonicalPath={Astro.url.pathname}
+>
   <div class="min-h-dvh bg-background">
     <HeaderShell />
     {

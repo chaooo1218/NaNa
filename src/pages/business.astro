@@ -1,0 +1,35 @@
+---
+import ContentSection from "@/components/content/ContentSection.astro"
+import PageHeader from "@/components/content/PageHeader.astro"
+import Footer from "@/components/layout/Footer.astro"
+import HeaderShell from "@/components/layout/HeaderShell.astro"
+import PublicLayout from "@/layouts/PublicLayout.astro"
+---
+
+<PublicLayout title="商家合作｜NaNa 人流" description="了解 NaNa 測試階段可為輔大周邊店家準備的人流資訊與數位營運入口。" canonicalPath="/business">
+  <div class="min-h-dvh bg-background">
+    <HeaderShell />
+    <PageHeader eyebrow="商家合作" title="讓附近顧客更快做出用餐決定" description="NaNa 正在測試店家人流、等待時間與菜單入口的公開展示方式，協助店家以清楚資訊服務附近顧客。" />
+    <main class="mx-auto max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
+      <ContentSection title="目前可規劃的公開資訊">
+        <ul class="grid gap-2 pl-5 marker:text-primary">
+          <li>人流狀態與等待時間的公開展示。</li>
+          <li>店家基本資訊、營業時間與菜單預覽入口。</li>
+          <li>未來線上點餐入口與店家後台的介接規劃。</li>
+        </ul>
+      </ContentSection>
+      <ContentSection title="測試階段說明">
+        <p>目前公開頁面使用測試資料，尚未提供正式線上點餐、店家後台或商業營運功能。合作內容會依實際需求與後續規劃確認。</p>
+      </ContentSection>
+      <ContentSection title="合作前可先確認">
+        <ul class="grid gap-2 pl-5 marker:text-primary">
+          <li>店家希望公開的基本資料與營業資訊。</li>
+          <li>人流資訊的展示範圍與資料更新方式。</li>
+          <li>未來是否需要菜單、數位營運或多分店規劃。</li>
+        </ul>
+      </ContentSection>
+      <a href="/contact" class="inline-flex rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-primary">聯絡我們洽談合作</a>
+    </main>
+    <Footer />
+  </div>
+</PublicLayout>

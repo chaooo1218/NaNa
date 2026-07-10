@@ -4,11 +4,15 @@ import "../styles/global.css"
 interface Props {
   title?: string
   description?: string
+  canonicalPath?: string
+  ogType?: "website" | "article"
 }
 
 const {
-  title = "NaNa｜輔大 514 巷即時人流",
-  description = "查看輔大 514 巷附近店家的人流狀態、等待時間與線上點餐資訊。",
+  title = "NaNa 人流｜輔大 514 巷即時人流與店家資訊",
+  description = "查看輔大 514 巷周邊店家的人流狀態、等待時間與線上點餐資訊。NaNa 目前為測試資料階段。",
+  canonicalPath = Astro.url.pathname,
+  ogType = "website",
 } = Astro.props
 ---
 
@@ -17,6 +21,10 @@ const {
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalPath} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={ogType} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2e417b" />
     <title>{title}</title>

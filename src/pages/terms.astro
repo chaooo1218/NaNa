@@ -1,0 +1,29 @@
+---
+import ContentSection from "@/components/content/ContentSection.astro"
+import PageHeader from "@/components/content/PageHeader.astro"
+import Footer from "@/components/layout/Footer.astro"
+import HeaderShell from "@/components/layout/HeaderShell.astro"
+import PublicLayout from "@/layouts/PublicLayout.astro"
+---
+
+<PublicLayout title="使用條款草案｜NaNa 人流" description="NaNa 測試階段的使用條款草案與公開資料使用限制。" canonicalPath="/terms" ogType="article">
+  <div class="min-h-dvh bg-background">
+    <HeaderShell />
+    <PageHeader eyebrow="測試階段說明・草案" title="使用條款草案" description="本頁為法律審核前的測試階段說明，不構成正式服務條款或法律保證。" />
+    <main class="mx-auto max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
+      <ContentSection title="測試資料與參考性">
+        <p>目前網站使用測試資料。人流狀態與等待時間僅供附近用餐決策參考，可能延遲、不完整或與現場狀況不同。</p>
+      </ContentSection>
+      <ContentSection title="功能建置狀態">
+        <p>線上點餐、地圖、店家後台與其他數位服務仍在建置中。網站上的相關入口或菜單預覽不代表已提供正式下單、付款或店家管理服務。</p>
+      </ContentSection>
+      <ContentSection title="使用者與店家資料">
+        <p>使用者不得以干擾、濫用或其他不當方式使用網站。店家資訊、資料狀態與服務內容可能依測試進度調整、暫停或更新。</p>
+      </ContentSection>
+      <ContentSection title="草案聲明與聯絡方式">
+        <p>本條款尚未完成法律審核，可能於正式服務前更新。對內容有疑問，請聯絡 0988944187。</p>
+      </ContentSection>
+    </main>
+    <Footer />
+  </div>
+</PublicLayout>

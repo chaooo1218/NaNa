@@ -1,0 +1,34 @@
+---
+import ContentSection from "@/components/content/ContentSection.astro"
+import PageHeader from "@/components/content/PageHeader.astro"
+import Footer from "@/components/layout/Footer.astro"
+import HeaderShell from "@/components/layout/HeaderShell.astro"
+import PublicLayout from "@/layouts/PublicLayout.astro"
+---
+
+<PublicLayout title="資料更新說明｜NaNa 人流" description="說明 NaNa 目前測試資料、公開人流狀態與未來資料更新原則。" canonicalPath="/data-status">
+  <div class="min-h-dvh bg-background">
+    <HeaderShell />
+    <PageHeader eyebrow="資料更新說明" title="清楚標示資料狀態與限制" description="目前公開網站使用測試資料；未來正式資料會依非影像人流模組與後端資料流的公開結果提供。" />
+    <main class="mx-auto max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
+      <ContentSection title="目前公開資料">
+        <ul class="grid gap-2 pl-5 marker:text-primary">
+          <li>目前頁面顯示測試資料，不代表正式即時服務已上線。</li>
+          <li>未來公開網站只會讀取 Public API 提供的 Restaurant Level Live Snapshot。</li>
+          <li>公開頁面不會顯示設備識別資訊、內部資料或原始感測內容。</li>
+        </ul>
+      </ContentSection>
+      <ContentSection title="如何理解人流與等待時間">
+        <ul class="grid gap-2 pl-5 marker:text-primary">
+          <li>人流狀態是用於決策的概略訊號，不等於店內精確人數。</li>
+          <li>等待時間是估算值，可能受現場狀況影響。</li>
+          <li>資料延遲時，頁面會顯示資料可能延遲或暫無即時資料。</li>
+        </ul>
+      </ContentSection>
+      <ContentSection title="後續資料方向">
+        <p>正式資料需要完成店家端人流模組、後端資料流與公開 API 的整合後才能提供。這些功能目前仍在建置與驗證階段。</p>
+      </ContentSection>
+    </main>
+    <Footer />
+  </div>
+</PublicLayout>

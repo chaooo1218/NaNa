@@ -1,0 +1,37 @@
+---
+import ContentSection from "@/components/content/ContentSection.astro"
+import PageHeader from "@/components/content/PageHeader.astro"
+import Footer from "@/components/layout/Footer.astro"
+import HeaderShell from "@/components/layout/HeaderShell.astro"
+import PublicLayout from "@/layouts/PublicLayout.astro"
+---
+
+<PublicLayout title="常見問題｜NaNa 人流" description="了解 NaNa 測試資料、人流狀態、等待時間與商家合作的常見問題。" canonicalPath="/faq">
+  <div class="min-h-dvh bg-background">
+    <HeaderShell />
+    <PageHeader eyebrow="常見問題" title="先說明目前能提供什麼" description="NaNa 仍在測試階段。以下回答以目前公開網站與後續規劃為準，不代表正式服務承諾。" />
+    <main class="mx-auto max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
+      <ContentSection title="學生端">
+        <div class="grid gap-5">
+          <div><h3 class="font-semibold text-foreground">NaNa 的人流資料是什麼？</h3><p>頁面以人少、普通、忙碌等狀態與等待時間協助附近用餐決策，不會把人流狀態解讀為店內精確人數。</p></div>
+          <div><h3 class="font-semibold text-foreground">現在顯示的是正式資料嗎？</h3><p>不是。目前公開網站使用測試資料，頁面會清楚標示資料狀態。</p></div>
+          <div><h3 class="font-semibold text-foreground">等待時間一定準嗎？</h3><p>不是。等待時間是估算值，可能因現場狀況或資料延遲而不同。</p></div>
+          <div><h3 class="font-semibold text-foreground">為什麼有些店家沒有即時資料？</h3><p>店家資料可能尚未開放、正在更新，或目前沒有可顯示的資料。</p></div>
+          <div><h3 class="font-semibold text-foreground">線上點餐現在可以使用嗎？</h3><p>尚未開放正式下單或付款；目前僅提供菜單預覽與建置中提示。</p></div>
+          <div><h3 class="font-semibold text-foreground">地圖功能什麼時候開放？</h3><p>地圖仍在建置中，現階段先提供距離、步行時間與店家資訊。</p></div>
+        </div>
+      </ContentSection>
+      <ContentSection title="店家端">
+        <div class="grid gap-5">
+          <div><h3 class="font-semibold text-foreground">店家如何加入 NaNa？</h3><p>可先透過聯絡頁洽詢，確認店家資訊展示與後續合作需求。</p></div>
+          <div><h3 class="font-semibold text-foreground">人流模組會拍攝影像嗎？</h3><p>規劃原則為非影像人流模組，不以公開網站呈現可識別個人的影像資料。</p></div>
+          <div><h3 class="font-semibold text-foreground">可以只使用人流顯示，不使用線上點餐嗎？</h3><p>可以。公開人流展示與未來線上點餐入口可依合作需求分開規劃。</p></div>
+          <div><h3 class="font-semibold text-foreground">未來是否有店家後台？</h3><p>店家後台屬於未來規劃，目前尚未開放。</p></div>
+          <div><h3 class="font-semibold text-foreground">是否可以收到報表？</h3><p>報表功能仍在規劃中，尚未提供正式報表服務。</p></div>
+          <div><h3 class="font-semibold text-foreground">是否支援多分店？</h3><p>多分店為後續規劃方向，實際支援方式需於合作前另行確認。</p></div>
+        </div>
+      </ContentSection>
+    </main>
+    <Footer />
+  </div>
+</PublicLayout>

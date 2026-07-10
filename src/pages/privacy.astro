@@ -1,0 +1,32 @@
+---
+import ContentSection from "@/components/content/ContentSection.astro"
+import PageHeader from "@/components/content/PageHeader.astro"
+import Footer from "@/components/layout/Footer.astro"
+import HeaderShell from "@/components/layout/HeaderShell.astro"
+import PublicLayout from "@/layouts/PublicLayout.astro"
+---
+
+<PublicLayout title="隱私權政策草案｜NaNa 人流" description="NaNa 測試階段的隱私權政策草案與非影像人流資料原則。" canonicalPath="/privacy" ogType="article">
+  <div class="min-h-dvh bg-background">
+    <HeaderShell />
+    <PageHeader eyebrow="測試階段說明・草案" title="隱私權政策草案" description="本頁為法律審核前的測試階段說明，不構成正式法律文件或服務保證。" />
+    <main class="mx-auto max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
+      <ContentSection title="適用範圍">
+        <p>本草案說明 NaNa 公開網站目前可能涉及的資料處理原則。實際服務內容尚未完成正式上線，內容可能隨功能與法律審核調整。</p>
+      </ContentSection>
+      <ContentSection title="公開網站使用資訊">
+        <p>目前公開網站可能處理基本瀏覽資訊，例如頁面請求、裝置瀏覽環境或錯誤診斷所需的最小資訊。Cookie 與分析工具目前未正式啟用。</p>
+      </ContentSection>
+      <ContentSection title="未來功能可能涉及的資料">
+        <p>若未來啟用登入、線上點餐或店家後台，可能需要處理帳號、聯絡、訂單或店家營運相關資料；啟用前會另行提供適用說明。</p>
+      </ContentSection>
+      <ContentSection title="非影像人流原則">
+        <p>人流模組規劃採非影像方式提供概略人流狀態。公開網站不顯示設備識別資料，也不呈現可識別個人的影像資料。</p>
+      </ContentSection>
+      <ContentSection title="第三方服務與聯絡方式">
+        <p>第三方服務目前尚未正式啟用。對本草案有疑問，請聯絡 0988944187。正式服務前仍需完成適用的法律與營運審核。</p>
+      </ContentSection>
+    </main>
+    <Footer />
+  </div>
+</PublicLayout>

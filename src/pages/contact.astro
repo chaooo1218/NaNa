@@ -1,0 +1,27 @@
+---
+import ContentSection from "@/components/content/ContentSection.astro"
+import PageHeader from "@/components/content/PageHeader.astro"
+import Footer from "@/components/layout/Footer.astro"
+import HeaderShell from "@/components/layout/HeaderShell.astro"
+import PublicLayout from "@/layouts/PublicLayout.astro"
+---
+
+<PublicLayout title="聯絡我們｜NaNa 人流" description="聯絡采旭資訊科技有限公司，了解 NaNa 人流測試階段與商家合作方向。" canonicalPath="/contact">
+  <div class="min-h-dvh bg-background">
+    <HeaderShell />
+    <PageHeader eyebrow="聯絡我們" title="採取清楚、務實的合作方式" description="如需了解店家人流資訊展示、菜單預覽或後續合作規劃，請透過以下方式聯絡。" />
+    <main class="mx-auto max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
+      <ContentSection title="公司資訊">
+        <dl class="grid gap-3">
+          <div><dt class="font-semibold text-foreground">公司名稱</dt><dd>采旭資訊科技有限公司</dd></div>
+          <div><dt class="font-semibold text-foreground">連絡電話</dt><dd><a href="tel:0988944187" class="font-semibold text-primary">0988944187</a></dd></div>
+          <div><dt class="font-semibold text-foreground">服務地區</dt><dd>新北、台北，其他地區可洽詢</dd></div>
+        </dl>
+      </ContentSection>
+      <ContentSection title="目前服務狀態">
+        <p>NaNa 公開網站仍在測試資料階段。未提供正式線上點餐、付款、登入或店家後台服務。</p>
+      </ContentSection>
+    </main>
+    <Footer />
+  </div>
+</PublicLayout>
