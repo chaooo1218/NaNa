@@ -6,12 +6,14 @@ import {
   normalizeRestaurantIds,
   type PublicRestaurantApi,
 } from "@/lib/api/restaurant-api"
-import { mockRestaurantFixtures } from "@/lib/api/mock/restaurant-fixtures"
+import { mockRestaurantDetailFixtures, mockRestaurantFixtures } from "@/lib/api/mock/restaurant-fixtures"
 import { toRestaurantLiveStatus } from "@/lib/mappers/live-status.mapper"
+import { toRestaurantDetail } from "@/lib/mappers/restaurant-detail.mapper"
 import { toRestaurantListItem } from "@/lib/mappers/restaurant.mapper"
 import type { ApiResponse, PaginationMeta, RequestOptions } from "@/types/api"
 import type { LiveStatusBatchRequest, LiveStatusBatchResponse } from "@/types/live-status"
-import type { RestaurantListItem } from "@/types/restaurant"
+import type { RestaurantMenu } from "@/types/menu"
+import type { RestaurantDetail, RestaurantListItem } from "@/types/restaurant"
 import type { RestaurantQueryParams } from "@/types/query"
 
 const normalizeKeyword = (keyword: string | undefined) => keyword?.trim().toLowerCase() ?? ""
@@ -140,6 +142,36 @@ export const mockRestaurantApi: PublicRestaurantApi = {
 
     return {
       data: { statuses },
+      meta: createMeta(options?.requestId),
+    }
+  },
+
+  async getRestaurantBySlug(slug: string, options?: RequestOptions): Promise<ApiResponse<RestaurantDetail>> {
+    const fixture = mockRestaurantFixtures.find((item) => item.slug === slug)
+    const content = mockRestaurantDetailFixtures.find((item) => item.slug === slug)
+
+    if (fixture === undefined || content === undefined) {
+      throw createApiError("NOT_FOUND", "找不到店家資料。", options?.requestId)
+    }
+
+    return {
+      data: toRestaurantDetail(toRestaurantListItem(fixture), fixture.description, content),
+      meta: createMeta(options?.requestId),
+    }
+  },
+
+  async getRestaurantMenu(slug: string, options?: RequestOptions): Promise<ApiResponse<RestaurantMenu>> {
+    const content = mockRestaurantDetailFixtures.find((item) => item.slug === slug)
+
+    if (content === undefined || content.menu === null) {
+      throw createApiError("NOT_FOUND", "找不到菜單資料。", options?.requestId)
+    }
+
+    return {
+      data: {
+        restaurantSlug: slug,
+        categories: content.menu,
+      },
       meta: createMeta(options?.requestId),
     }
   },

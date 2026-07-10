@@ -3,6 +3,7 @@ import type { RestaurantListItem, RestaurantPromotion, SponsorLevel } from "@/ty
 
 export interface RestaurantCardViewModel {
   id: string
+  slug: string
   name: string
   categoryLabel: string
   tags: string[]
@@ -19,7 +20,8 @@ export interface RestaurantCardViewModel {
   sponsorLevel: SponsorLevel
   sponsorLabel: string | null
   hasOnlineOrder: boolean
-  onlineOrderUrl: string | null
+  detailHref: string
+  menuHref: string
 }
 
 type RawRestaurantRecord = RestaurantListItem & {
@@ -110,6 +112,7 @@ const formatSponsorLabel = (restaurant: RestaurantListItem) => {
 export function toRestaurantCardViewModel(restaurant: RestaurantListItem): RestaurantCardViewModel {
   return {
     id: restaurant.id,
+    slug: restaurant.slug,
     name: restaurant.name,
     categoryLabel: restaurant.categoryLabel,
     tags: restaurant.tags,
@@ -129,6 +132,7 @@ export function toRestaurantCardViewModel(restaurant: RestaurantListItem): Resta
     sponsorLevel: restaurant.sponsorLevel,
     sponsorLabel: formatSponsorLabel(restaurant),
     hasOnlineOrder: restaurant.hasOnlineOrder,
-    onlineOrderUrl: restaurant.onlineOrderUrl,
+    detailHref: `/restaurants/${restaurant.slug}`,
+    menuHref: `/restaurants/${restaurant.slug}/menu`,
   }
 }

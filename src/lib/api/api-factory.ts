@@ -10,6 +10,12 @@ const productionProvider: PublicRestaurantApi = {
   async getLiveStatuses() {
     throw createApiError("CONFIGURATION", "正式 Public API Provider 尚未在 Phase 2 啟用。")
   },
+  async getRestaurantBySlug() {
+    throw createApiError("CONFIGURATION", "正式 Public API Provider 尚未在目前階段啟用。")
+  },
+  async getRestaurantMenu() {
+    throw createApiError("CONFIGURATION", "正式 Public API Provider 尚未在目前階段啟用。")
+  },
 }
 
 export function createRestaurantApi(): PublicRestaurantApi {

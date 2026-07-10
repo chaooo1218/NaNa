@@ -1,6 +1,7 @@
 import type { ApiResponse, RequestOptions } from "@/types/api"
 import type { LiveStatusBatchRequest, LiveStatusBatchResponse } from "@/types/live-status"
-import type { RestaurantListItem } from "@/types/restaurant"
+import type { RestaurantMenu } from "@/types/menu"
+import type { RestaurantDetail, RestaurantListItem } from "@/types/restaurant"
 import type { RestaurantQueryParams } from "@/types/query"
 
 export const MAX_RESTAURANTS_PER_REQUEST = 50
@@ -24,4 +25,8 @@ export interface PublicRestaurantApi {
     request: LiveStatusBatchRequest,
     options?: RequestOptions,
   ): Promise<ApiResponse<LiveStatusBatchResponse>>
+
+  getRestaurantBySlug(slug: string, options?: RequestOptions): Promise<ApiResponse<RestaurantDetail>>
+
+  getRestaurantMenu(slug: string, options?: RequestOptions): Promise<ApiResponse<RestaurantMenu>>
 }

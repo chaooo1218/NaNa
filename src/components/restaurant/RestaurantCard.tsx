@@ -78,14 +78,14 @@ export function RestaurantCard({ restaurant }: { restaurant: RestaurantCardViewM
             <span className="min-w-0 truncate text-[11px] text-muted-foreground">{restaurant.freshnessLabel}</span>
             {restaurant.hasOnlineOrder && restaurant.isOpen ? (
               <a
-                href={restaurant.onlineOrderUrl ?? "#online-order-placeholder"}
+                href={restaurant.menuHref}
                 className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-transform active:scale-[0.995]"
               >
                 <ShoppingBag className="size-3.5" aria-hidden="true" />
-                線上點餐
+                線上點餐建置中
               </a>
             ) : (
-              <a href="#restaurant-detail-placeholder" className="shrink-0 text-xs font-semibold text-primary">
+              <a href={restaurant.detailHref} className="shrink-0 text-xs font-semibold text-primary">
                 {restaurant.isOpen ? "查看詳情" : "查看營業時間"}
               </a>
             )}

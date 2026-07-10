@@ -64,6 +64,57 @@ export interface RestaurantListItem {
   promotion: RestaurantPromotion | null
 }
 
+export interface RestaurantBusinessHour {
+  dayLabel: string
+  openTime: string | null
+  closeTime: string | null
+  isClosed: boolean
+}
+
+export interface RestaurantNotice {
+  title: string
+  content: string
+}
+
+export interface RestaurantLocationPreview {
+  areaLabel: string
+  summary: string
+}
+
+export interface RestaurantDetailContent {
+  businessHours: RestaurantBusinessHour[]
+  notices: RestaurantNotice[]
+  location: RestaurantLocationPreview
+}
+
+export interface RestaurantDetail extends RestaurantListItem, RestaurantDetailContent {
+  description: string
+}
+
+export interface RestaurantDetailViewModel {
+  slug: string
+  name: string
+  coverImage: string
+  openLabel: string
+  isOpen: boolean
+  crowdLevel: CrowdLevel
+  crowdLabel: string
+  primarySignalLabel: string
+  waitTimeLabel: string
+  distanceLabel: string
+  categoryLabel: string
+  tags: string[]
+  freshnessLabel: string
+  description: string
+  businessHours: Array<{ dayLabel: string; hoursLabel: string }>
+  notices: RestaurantNotice[]
+  location: RestaurantLocationPreview
+  menuHref: string
+  detailHref: string
+  onlineOrderLabel: string
+  sponsorLabel: string | null
+}
+
 export interface RestaurantFilterState {
   keyword: string
   category: RestaurantCategory | null
