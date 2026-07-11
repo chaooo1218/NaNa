@@ -9,6 +9,7 @@
 # Local-only secret folders
 secrets/
 local-secrets/
+credentials/
 
 # Private keys and certificates
 *.pem
@@ -16,6 +17,8 @@ local-secrets/
 *.p8
 *.p12
 *.pfx
+*.crt
+*.cer
 
 # Local infrastructure state
 .aws/
