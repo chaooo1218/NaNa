@@ -3,7 +3,7 @@ syntax = "proto3";
 package nana.device.v1;
 
 import "google/protobuf/timestamp.proto";
-import "contracts/proto/v1/device_common.proto";
+import "v1/device_common.proto";
 
 enum DoorTopology {
   DOOR_TOPOLOGY_UNSPECIFIED = 0;

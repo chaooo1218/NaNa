@@ -2,9 +2,16 @@ openapi: 3.1.0
 info:
   title: NaNa Public API
   version: 0.1.0-draft
+  license:
+    name: Proprietary architecture draft
+    identifier: LicenseRef-Proprietary
   description: >-
     Public API contract draft for NaNa restaurant discovery. This document defines
     a future backend boundary only; it does not represent a deployed API.
+servers:
+  - url: /
+    description: Deployment origin placeholder; no server is deployed by this contract.
+security: []
 paths:
   /public/restaurants:
     get:
@@ -226,7 +233,7 @@ components:
         walkingMinutes: { type: [integer, 'null'], minimum: 0 }
         status: { type: string, enum: [open, closed, unknown] }
         crowdLevel: { $ref: '#/components/schemas/CrowdLevel' }
-        trafficCount: { type: [integer, 'null'], minimum: 0, description: Flow count, not in-store occupancy }
+        trafficCount: { type: [integer, 'null'], minimum: 0, description: 'Flow count, not in-store occupancy' }
         waitingCount: { type: [integer, 'null'], minimum: 0 }
         estimatedWaitMinutes: { type: [integer, 'null'], minimum: 0 }
         occupancyEstimate: { type: [integer, 'null'], minimum: 0 }
@@ -334,7 +341,7 @@ components:
       required: [restaurantId, trafficCount, trafficWindowSeconds, waitingCount, estimatedWaitMinutes, waitTimeConfidence, crowdLevel, occupancyEstimate, occupancyConfidence, freshness, observedAt, receivedAt]
       properties:
         restaurantId: { type: string }
-        trafficCount: { type: [integer, 'null'], minimum: 0, description: Flow count, never occupancy }
+        trafficCount: { type: [integer, 'null'], minimum: 0, description: 'Flow count, never occupancy' }
         trafficWindowSeconds: { type: [integer, 'null'], minimum: 1 }
         waitingCount: { type: [integer, 'null'], minimum: 0 }
         estimatedWaitMinutes: { type: [integer, 'null'], minimum: 0 }

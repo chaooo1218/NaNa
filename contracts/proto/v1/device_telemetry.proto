@@ -3,7 +3,7 @@ syntax = "proto3";
 package nana.device.v1;
 
 import "google/protobuf/timestamp.proto";
-import "contracts/proto/v1/device_common.proto";
+import "v1/device_common.proto";
 
 enum RadarStatus {
   RADAR_STATUS_UNSPECIFIED = 0;
@@ -44,8 +44,8 @@ message CountWindowTelemetry {
   optional google.protobuf.Timestamp window_start = 5;
   optional google.protobuf.Timestamp window_end = 6;
   uint32 window_duration_ms = 7;
-  uint32 entry_delta = 8;
-  uint32 exit_delta = 9;
+  optional uint32 entry_delta = 8;
+  optional uint32 exit_delta = 9;
   optional sint32 local_occupancy_candidate = 10;
   optional uint32 waiting_count_candidate = 11;
   uint32 target_count_peak = 12;
